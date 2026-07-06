@@ -1,5 +1,5 @@
 # The Styk
-Digitale Post-its, die in Ihren Mac-Ordnern leben.
+Digitale Notizen, die in Ihren Mac-Ordnern leben.
 
 The Styk ist ein winziges Programm, das digitale Notizen an Ihren Finder-Ordnern verankert. Eine Notiz schwebt auf dem Bildschirm, während Sie sich in dem Ordner befinden, in dem Sie sie erstellt haben – verlassen Sie den Ordner, verschwindet sie; kehren Sie zurück, erscheint sie wieder.
 
@@ -9,14 +9,14 @@ Laden Sie The Styk unter https://setor101.com.br/apps herunter, ziehen Sie es in
 
 ## Verwendung
 
-The Styk platziert ein Notizsymbol auf der rechten Seite Ihrer Menüleiste. Klicken Sie auf das Symbol, um das Menü anzuzeigen. Von hier aus können Sie **„Neue Notiz in diesem Ordner“** wählen, um ein Post-it zu erstellen. Schreiben Sie hinein; die Notiz speichert sich automatisch.
+The Styk platziert ein Notizsymbol auf der rechten Seite Ihrer Menüleiste. Klicken Sie auf das Symbol, um das Menü anzuzeigen. Von hier aus können Sie **„Neue Notiz in diesem Ordner“** wählen, um eine Notiz zu erstellen. Schreiben Sie hinein; die Notiz speichert sich automatisch.
 
 ### Menüleiste
 Das Menü der Statusleiste listet alle Notizen auf, gruppiert nach Ordnern. Klicken Sie auf eine Notiz, um direkt zu diesem Ordner im Finder zu springen, sie zu exportieren oder zu löschen.
 
 ### Interaktion mit den Notizen
 Bewegen Sie den Mauszeiger über eine Notiz, um deren Aktionsleiste anzuzeigen. Von hier aus können Sie:
-- Post-it-Farben ändern.
+- Notizfarben ändern.
 - Schriftgröße (A− / A+) und Schriftstil (Aa) anpassen.
 - Die Notiz teilen (über AirDrop, Nachrichten, Mail usw.).
 - Die Notiz löschen.

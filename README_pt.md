@@ -9,14 +9,14 @@ Baixe o The Styk em https://setor101.com.br/apps e arraste-o para a sua pasta de
 
 ## Como Usar
 
-O The Styk coloca um ícone de nota no lado direito da sua barra de menus. Clique no ícone para exibir o menu. A partir daqui, você pode escolher **"Nova nota nesta pasta"** para criar um post-it. Escreva nele; a nota é salva automaticamente.
+O The Styk coloca um ícone de nota no lado direito da sua barra de menus. Clique no ícone para exibir o menu. A partir daqui, você pode escolher **"Nova nota nesta pasta"** para criar uma nota. Escreva nele; a nota é salva automaticamente.
 
 ### Barra de Menus
 O menu da barra de status lista todas as notas, agrupadas por pasta. Clique em qualquer nota para ir direto para essa pasta no Finder, exportá-la ou apagá-la.
 
 ### Interação com as Notas
 Passe o mouse sobre uma nota para revelar sua barra de ações. A partir dela, você pode:
-- Alterar as cores do post-it.
+- Alterar as cores da nota.
 - Ajustar o tamanho da fonte (A− / A+) e o estilo da fonte (Aa).
 - Compartilhar a nota (via AirDrop, Mensagens, Mail, etc.).
 - Apagar a nota.
@@ -46,4 +46,4 @@ Apagar é totalmente reversível. As notas apagadas vão para a Lixeira interna 
 A versão principal para Apple Silicon exige o macOS 11 (Big Sur) ou posterior. No entanto, existe uma versão Intel legada disponível que roda no macOS 10.13 (High Sierra) e posteriores.
 
 ### Como o The Styk é diferente das notas autoadesivas padrão?
-Diferente dos apps de notas comuns onde os post-its poluem sua mesa indefinidamente, o The Styk ancora as notas contextualmente a pastas específicas. Elas só aparecem quando você realmente abre e visualiza aquela pasta no Finder.
+Diferente dos apps de notas comuns onde as notas poluem sua mesa indefinidamente, o The Styk ancora as notas contextualmente a pastas específicas. Elas só aparecem quando você realmente abre e visualiza aquela pasta no Finder.

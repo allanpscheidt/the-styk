@@ -1,6 +1,6 @@
 # The Styk — Arquitetura e Contrato de Módulos
 
-Post-its digitais ancorados a pastas do Finder. A nota flutua na tela **somente enquanto
+Notas digitais ancoradas a pastas do Finder. A nota flutua na tela **somente enquanto
 o usuário está dentro da pasta onde ela foi criada** (janela frontal do Finder). Ao sair
 da pasta, a nota some — mas continua ancorada e reaparece quando ele volta.
 
@@ -126,7 +126,7 @@ env `THESTYK_DATA_DIR`).
 
 ```swift
 enum Theme {
-    static func nsColor(_ c: NoteColor) -> NSColor      // pastel post-it, ver tabela
+    static func nsColor(_ c: NoteColor) -> NSColor      // pastel, ver tabela
     static func font(_ s: NoteStyle) -> NSFont          // via NSFontDescriptor.SystemDesign quando der
     static func label(_ c: NoteColor) -> String         // "Amarelo", "Rosa", ...
 }

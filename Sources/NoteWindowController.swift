@@ -125,7 +125,7 @@ final class NoteWindowController: NSWindowController, NSWindowDelegate, NSTextVi
         panel.minSize = NSSize(width: 160, height: 140)
         panel.isReleasedWhenClosed = false
         panel.animationBehavior = reduceMotion ? .none : .utilityWindow
-        // Post-it é sempre papel claro com tinta escura — mesmo visual nos dois modos.
+        // Nota é sempre papel claro com tinta escura — mesmo visual nos dois modos.
         panel.appearance = NSAppearance(named: .aqua)
     }
 

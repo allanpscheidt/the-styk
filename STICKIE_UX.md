@@ -78,7 +78,7 @@ Tom: direto e caloroso, sem jargão, sem "por favor", sem exclamação em série
 ### Alertas
 **Primeiro launch** (uma vez):
 - Título: `O StickIE está na barra de menus`
-- Texto: `Abra uma pasta no Finder e clique no ícone de nota lá em cima para criar seu primeiro post-it. Ele gruda na pasta: some quando você sai e volta quando você volta.`
+- Texto: `Abra uma pasta no Finder e clique no ícone de nota lá em cima para criar sua primeira nota. Ela gruda na pasta: some quando você sai e volta quando você volta.`
 - Botão: `Entendi`
 
 **Automação negada** (`-1743`, uma vez):
@@ -115,7 +115,7 @@ Tom: direto e caloroso, sem jargão, sem "por favor", sem exclamação em série
 |---|---|
 | Snippet de nota vazia | `Nota vazia` |
 | Nome de arquivo exportado | `StickIE – <snippet>.txt` · fallback `StickIE – Nota.txt` |
-| About (Credits, uma linha) | `Post-its que grudam nas suas pastas. As notas seguem o caminho da pasta: se você renomear ou mover a pasta, encontre a nota pelo menu e exporte o texto.` |
+| About (Credits, uma linha) | `Notas que grudam nas suas pastas. As notas seguem o caminho da pasta: se você renomear ou mover a pasta, encontre a nota pelo menu e exporte o texto.` |
 
 ---
 

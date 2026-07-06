@@ -1,5 +1,5 @@
 # The Styk
-Digital post-its that live inside your Mac folders.
+Digital notes that live inside your Mac folders.
 
 The Styk is a tiny program that keeps digital notes anchored to your Finder folders. The notes float on the screen while you are in the folder where you created them -- leave the folder, they disappear; return, they reappear.
 
@@ -9,14 +9,14 @@ Download The Styk at https://setor101.com.br/apps and drag it into your Applicat
 
 ## Usage
 
-The Styk puts a note icon in the right side of your menu bar. Click the icon to show the menu. From here, you can choose **"New note in this folder"** to create a post-it. Write in it; the note saves automatically.
+The Styk puts a note icon in the right side of your menu bar. Click the icon to show the menu. From here, you can choose **"New note in this folder"** to create a note. Write in it; the note saves automatically.
 
 ### Menubar
 The status bar menu lists all notes, grouped by folder. Click any note to jump straight to that folder in Finder, export it, or delete it.
 
 ### Notes Interaction
 Hover over a note to reveal its action bar. From here you can:
-- Change post-it colors.
+- Change note colors.
 - Adjust font size (A− / A+) and font style (Aa).
 - Share the note (via AirDrop, Messages, Mail, etc.).
 - Delete the note.

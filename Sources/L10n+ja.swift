@@ -8,7 +8,7 @@ extension L10n {
         "A pasta original foi apagada": "元のフォルダは削除されました",
         "A permissão continua negada": "アクセス許可はまだ拒否されています",
         "Abra Ajustes do Sistema → Privacidade e Segurança → Automação, localize o The Styk e ative o Finder. Depois, volte à pasta no Finder.": "システム設定 → プライバシーとセキュリティ → オートメーションを開き、The Stykを見つけてFinderをオンにしてください。その後、Finderでフォルダに戻ってください。",
-        "Abra uma pasta no Finder e clique no ícone de nota lá em cima para criar seu primeiro post-it. Ele gruda na pasta: some quando você sai e volta quando você volta.\n\nNa primeira vez, o macOS pede permissão para o The Styk ver o Finder — é só permitir.": "Finderでフォルダを開き、上部のメモアイコンをクリックして最初の付箋を作成してください。付箋はフォルダに貼り付きます。フォルダを離れると消え、戻ると再び表示されます。\n\n初回は、macOSがThe StykにFinderへのアクセス許可を求めます。許可するだけで大丈夫です。",
+        "Abra uma pasta no Finder e clique no ícone de nota lá em cima para criar sua primeira nota. Ela gruda na pasta: some quando você sai e volta quando você volta.\n\nNa primeira vez, o macOS pede permissão para o The Styk ver o Finder — é só permitir.": "Finderでフォルダを開き、上部のメモアイコンをクリックして最初のメモを作成してください。メモはフォルダに貼り付きます。フォルダを離れると消え、戻ると再び表示されます。\n\n初回は、macOSがThe StykにFinderへのアクセス許可を求めます。許可するだけで大丈夫です。",
         "Abra uma pasta no Finder para criar uma nota": "Finderでフォルダを開いてメモを作成してください",
         "Abre o The Styk automaticamente quando você faz login.": "ログイン時にThe Stykを自動的に開きます。",
         "Abre o pedido do sistema para o The Styk ler a pasta frontal do Finder.": "The StykがFinderの最前面のフォルダを読み取るためのシステムダイアログを開きます。",

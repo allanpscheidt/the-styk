@@ -1,5 +1,5 @@
 # The Styk
-Des post-its virtuels qui vivent dans les dossiers de votre Mac.
+Des notes virtuelles qui vivent dans les dossiers de votre Mac.
 
 The Styk est un tout petit programme qui maintient des notes numériques ancrées à vos dossiers du Finder. Une note flotte sur l'écran pendant que vous êtes dans le dossier où vous l'avez créée -- quittez le dossier, elle disparaît ; revenez, elle réapparaît.
 
@@ -9,14 +9,14 @@ Téléchargez The Styk sur https://setor101.com.br/apps et glissez-le dans votre
 
 ## Utilisation
 
-The Styk place une icône de note sur le côté droit de votre barre de menus. Cliquez sur l'icône pour afficher le menu. De là, vous pouvez choisir **"Nouvelle note dans ce dossier"** pour créer un post-it. Écrivez dedans ; la note s'enregistre automatiquement.
+The Styk place une icône de note sur le côté droit de votre barre de menus. Cliquez sur l'icône pour afficher le menu. De là, vous pouvez choisir **"Nouvelle note dans ce dossier"** pour créer une note. Écrivez dedans ; la note s'enregistre automatiquement.
 
 ### Barre de menus
 Le menu de la barre d'état répertorie toutes les notes, regroupées par dossier. Cliquez sur n'importe quelle note pour accéder directement à ce dossier dans le Finder, l'exporter ou la supprimer.
 
 ### Interaction avec les notes
 Survolez une note pour révéler sa barre d'action. De là, vous pouvez :
-- Changer les couleurs du post-it.
+- Changer les couleurs de la note.
 - Ajuster la taille de la police (A− / A+) et le style de police (Aa).
 - Partager la note (via AirDrop, Messages, Mail, etc.).
 - Supprimer la note.

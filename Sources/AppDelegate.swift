@@ -82,7 +82,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.icon = NSApp.applicationIconImage
         alert.messageText = L("O The Styk está na barra de menus")
         alert.informativeText = L("""
-        Abra uma pasta no Finder e clique no ícone de nota lá em cima para criar seu primeiro post-it. Ele gruda na pasta: some quando você sai e volta quando você volta.
+        Abra uma pasta no Finder e clique no ícone de nota lá em cima para criar sua primeira nota. Ela gruda na pasta: some quando você sai e volta quando você volta.
 
         Na primeira vez, o macOS pede permissão para o The Styk ver o Finder — é só permitir.
         """)

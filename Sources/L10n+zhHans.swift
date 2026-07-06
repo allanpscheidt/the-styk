@@ -8,7 +8,7 @@ extension L10n {
         "A pasta original foi apagada": "原文件夹已被删除",
         "A permissão continua negada": "权限仍被拒绝",
         "Abra Ajustes do Sistema → Privacidade e Segurança → Automação, localize o The Styk e ative o Finder. Depois, volte à pasta no Finder.": "请打开系统设置 → 隐私与安全性 → 自动化，找到 The Styk 并启用“访达”。然后，回到访达中的文件夹。",
-        "Abra uma pasta no Finder e clique no ícone de nota lá em cima para criar seu primeiro post-it. Ele gruda na pasta: some quando você sai e volta quando você volta.\n\nNa primeira vez, o macOS pede permissão para o The Styk ver o Finder — é só permitir.": "在访达中打开一个文件夹，点按顶部的便笺图标即可创建你的第一张便利贴。它会粘在文件夹上：你离开时它消失，回来时它再次出现。\n\n首次使用时，macOS 会请求允许 The Styk 查看访达——允许即可。",
+        "Abra uma pasta no Finder e clique no ícone de nota lá em cima para criar sua primeira nota. Ela gruda na pasta: some quando você sai e volta quando você volta.\n\nNa primeira vez, o macOS pede permissão para o The Styk ver o Finder — é só permitir.": "在访达中打开一个文件夹，点按顶部的便笺图标即可创建你的第一张便签。它会粘在文件夹上：你离开时它消失，回来时它再次出现。\n\n首次使用时，macOS 会请求允许 The Styk 查看访达——允许即可。",
         "Abra uma pasta no Finder para criar uma nota": "在访达中打开一个文件夹来创建便笺",
         "Abre o The Styk automaticamente quando você faz login.": "登录时自动打开 The Styk。",
         "Abre o pedido do sistema para o The Styk ler a pasta frontal do Finder.": "打开系统权限请求，让 The Styk 能读取访达最前方的文件夹。",
