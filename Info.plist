@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>The Styk</string>
+	<key>CFBundleDisplayName</key>
+	<string>The Styk</string>
+	<key>CFBundleIdentifier</key>
+	<string>br.com.allanpscheidt.thestyk</string>
+	<key>CFBundleExecutable</key>
+	<string>The Styk</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>11.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>LSMultipleInstancesProhibited</key>
+	<true/>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.productivity</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>O The Styk pergunta ao Finder qual pasta está aberta para mostrar as notas ancoradas a ela. Nenhum conteúdo seu é lido.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>© 2026 Allan Pscheidt</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>pt-BR</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>pt-BR</string>
+		<string>en</string>
+		<string>zh-Hans</string>
+		<string>ja</string>
+		<string>de</string>
+		<string>fr</string>
+	</array>
+</dict>
+</plist>
