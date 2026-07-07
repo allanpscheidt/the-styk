@@ -6,7 +6,7 @@ let outDir = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "AppIc
 try? FileManager.default.createDirectory(atPath: outDir, withIntermediateDirectories: true)
 
 let fm = FileManager.default
-let logoPaths = ["../logo.png", "logo.png"]
+let logoPaths = ["assets/logo.png", "../logo.png", "logo.png"]
 var selectedLogoPath: String? = nil
 
 for path in logoPaths {
