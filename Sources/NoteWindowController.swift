@@ -735,6 +735,15 @@ private final class NoteTextView: NSTextView {
             default: break
             }
         }
-        return super.performKeyEquivalent(with: event)
     }
 }
+
+#if !compiler(>=6.3)
+import AppKit
+
+public class NSGlassEffectView: NSView {
+    public var cornerRadius: CGFloat = 0
+    public var tintColor: NSColor?
+    public var contentView: NSView?
+}
+#endif
