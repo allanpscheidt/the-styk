@@ -1,11 +1,13 @@
 # The Styk
+<img src="assets/logo.png" width="128" alt="The Styk Logo" />
+
 Digitale Notizen, die in Ihren Mac-Ordnern leben.
 
 The Styk ist ein winziges Programm, das digitale Notizen an Ihren Finder-Ordnern verankert. Eine Notiz schwebt auf dem Bildschirm, während Sie sich in dem Ordner befinden, in dem Sie sie erstellt haben – verlassen Sie den Ordner, verschwindet sie; kehren Sie zurück, erscheint sie wieder.
 
 ## Installation
 
-Laden Sie The Styk unter https://setor101.com.br/apps herunter, ziehen Sie es in Ihren Programme-Ordner und doppelklicken Sie auf das Symbol, um es zu starten.
+Laden Sie The Styk unter https://setor101.com.br/apps/styk herunter, ziehen Sie es in Ihren Programme-Ordner und doppelklicken Sie auf das Symbol, um es zu starten.
 
 ## Verwendung
 
@@ -43,7 +45,7 @@ Das Löschen ist vollständig umkehrbar. Gelöschte Notizen landen im internen P
 - **Gelöschte Ordner**: Notizen gehen nicht verloren; sie werden in den Bereich „Verwaiste Notizen“ im Menü verschoben, wo Sie sie neu verankern, exportieren oder löschen können.
 
 ### Funktioniert dies mit macOS 10.x?
-Die primäre Apple Silicon Version erfordert macOS 11 (Big Sur) oder neuer. Es ist jedoch eine Intel-Legacy-Version verfügbar, die unter macOS 10.13 (High Sierra) und neuer läuft.
+Die primäre Apple Silicon Version erfordert macOS 11 (Big Sur) oder neuer. Es ist jedoch eine Intel-Legacy-Version verfügbar, die unter macOS 10.15 (Catalina) und neuer läuft.
 
 ### Wie unterscheidet sich The Styk von Standard-Haftnotizen?
 Im Gegensatz zu Standard-Haftnotiz-Apps, bei denen Notizen Ihren Schreibtisch unbegrenzt überladen, verankert The Styk Notizen kontextbezogen an bestimmten Ordnern. Sie erscheinen nur, wenn Sie diesen Ordner tatsächlich im Finder öffnen und anzeigen.

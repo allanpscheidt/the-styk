@@ -1,11 +1,13 @@
 # The Styk
+<img src="assets/logo.png" width="128" alt="The Styk Logo" />
+
 Digital notes that live inside your Mac folders.
 
 The Styk is a tiny program that keeps digital notes anchored to your Finder folders. The notes float on the screen while you are in the folder where you created them -- leave the folder, they disappear; return, they reappear.
 
 ## Installation
 
-Download The Styk at https://setor101.com.br/apps and drag it into your Applications folder, then double-click the icon to launch it.
+Download The Styk at https://setor101.com.br/apps/styk and drag it into your Applications folder, then double-click the icon to launch it.
 
 ## Usage
 
@@ -43,7 +45,7 @@ Deletion is fully reversible. Deleted notes go to the app's internal Trash (acce
 - **Deleted Folders**: Notes are not lost; they are moved to the "Orphan notes" section in the menu, where you can re-anchor, export, or trash them.
 
 ### Does this work with macOS 10.x?
-The primary Apple Silicon version requires macOS 11 (Big Sur) or later. However, an Intel legacy version is available that runs on macOS 10.13 (High Sierra) and newer.
+The primary Apple Silicon version requires macOS 11 (Big Sur) or later. However, an Intel legacy version is available that runs on macOS 10.15 (Catalina) and newer.
 
 ### How is The Styk different from standard sticky notes?
 Unlike standard sticky note apps where notes clutter your desktop indefinitely, The Styk contextually anchors notes to specific folders. They only appear when you actually open and view that folder in Finder.

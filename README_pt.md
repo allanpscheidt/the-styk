@@ -1,11 +1,13 @@
 # The Styk
+<img src="assets/logo.png" width="128" alt="The Styk Logo" />
+
 Notas que moram dentro das pastas do seu Mac.
 
 O The Styk é um programa minimalista que mantém notas digitais ancoradas às suas pastas do Finder. A nota flutua na tela enquanto você está na pasta onde a criou — saia da pasta, ela some; volte, ela reaparece.
 
 ## Instalação
 
-Baixe o The Styk em https://setor101.com.br/apps e arraste-o para a sua pasta de Aplicativos, então clique duas vezes no ícone para iniciá-lo.
+Baixe o The Styk em https://setor101.com.br/apps/styk e arraste-o para a sua pasta de Aplicativos, então clique duas vezes no ícone para iniciá-lo.
 
 ## Como Usar
 
@@ -43,7 +45,7 @@ Apagar é totalmente reversível. As notas apagadas vão para a Lixeira interna 
 - **Pastas Apagadas**: As notas não são perdidas; elas ficam na seção "Notas órfãs" do menu, onde você pode reancorá-las, exportá-las ou movê-las para a Lixeira.
 
 ### O app funciona no macOS 10.x?
-A versão principal para Apple Silicon exige o macOS 11 (Big Sur) ou posterior. No entanto, existe uma versão Intel legada disponível que roda no macOS 10.13 (High Sierra) e posteriores.
+A versão principal para Apple Silicon exige o macOS 11 (Big Sur) ou posterior. No entanto, existe uma versão Intel legada disponível que roda no macOS 10.15 (Catalina) e posteriores.
 
 ### Como o The Styk é diferente das notas autoadesivas padrão?
 Diferente dos apps de notas comuns onde as notas poluem sua mesa indefinidamente, o The Styk ancora as notas contextualmente a pastas específicas. Elas só aparecem quando você realmente abre e visualiza aquela pasta no Finder.

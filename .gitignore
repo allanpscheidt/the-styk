@@ -2,3 +2,4 @@
 build/
 .snapshot-pre-ux/
 *.zip
+*.dmg
