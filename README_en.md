@@ -16,6 +16,17 @@ The Styk is a tiny program that keeps digital notes anchored to your Finder fold
 
 Download The Styk at https://setor101.com.br/apps/styk and drag it into your Applications folder, then double-click the icon to launch it.
 
+> [!NOTE]
+> **macOS Security Warning (Gatekeeper)**
+>
+> If you see the warning "Apple cannot verify that this app is free of malware...", please note that this is due to Apple's requirement for developers to pay annual fees to digitally sign applications. Since The Styk is a free and open-source project, we believe this financial requirement is unfair to independent developers.
+> 
+> To open the app anyway:
+> 1. Try to open the app once to trigger the warning, then close it.
+> 2. Go to **System Settings** > **Privacy & Security** on your Mac.
+> 3. Scroll down to the **Security** section and click the **Open Anyway** button below the message about `The Styk.app`.
+> 4. Enter your password or use Touch ID to confirm.
+
 ## Usage
 
 The Styk puts a note icon in the right side of your menu bar. Click the icon to show the menu. From here, you can choose **"New note in this folder"** to create a note. Write in it; the note saves automatically.

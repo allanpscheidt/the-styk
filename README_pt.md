@@ -16,6 +16,17 @@ O The Styk é um programa minimalista que mantém notas digitais ancoradas às s
 
 Baixe o The Styk em https://setor101.com.br/apps/styk e arraste-o para a sua pasta de Aplicativos, então clique duas vezes no ícone para iniciá-lo.
 
+> [!NOTE]
+> **Aviso de Bloqueio do macOS (Gatekeeper)**
+>
+> Caso apareça o aviso "A Apple não pôde verificar se o item...", isso ocorre devido à exigência da Apple de pagamento de taxas anuais por parte dos desenvolvedores para assinar digitalmente o aplicativo. Como o The Styk é um projeto gratuito e de código aberto, acreditamos que essa exigência financeira não é justa para desenvolvedores independentes.
+> 
+> Para abrir o aplicativo mesmo assim:
+> 1. Tente abrir o app uma vez para gerar o aviso e feche-o.
+> 2. Acesse **Ajustes do Sistema** > **Privacidade e Segurança** no seu Mac.
+> 3. Role até a seção **Segurança** e clique no botão **Abrir Mesmo Assim** logo abaixo da mensagem sobre o `The Styk.app`.
+> 4. Insira sua senha ou use o Touch ID para confirmar.
+
 ## Como Usar
 
 O The Styk coloca um ícone de nota no lado direito da sua barra de menus. Clique no ícone para exibir o menu. A partir daqui, você pode escolher **"Nova nota nesta pasta"** para criar uma nota. Escreva nele; a nota é salva automaticamente.

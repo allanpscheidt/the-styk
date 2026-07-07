@@ -156,5 +156,7 @@ extension L10n {
         "Lista": "リスト",
         "Finder não ativo": "Finderがアクティブではありません",
         "Abra uma pasta no Finder para criar uma nota adesiva nesta localização.": "この場所に付箋を作成するには、Finderでフォルダを開いてください。",
+        "Código-fonte: ": "ソースコード: ",
+        "Download: ": "ダウンロード: ",
     ]
 }

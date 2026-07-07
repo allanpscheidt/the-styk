@@ -482,12 +482,31 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
     @objc private func showAbout() {
         NSApp.activate(ignoringOtherApps: true)
-        let credits = NSAttributedString(
-            string: L("Notas adesivas que grudam nas suas pastas."),
-            attributes: [.font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)]
-        )
+        let baseText = L("Notas adesivas que grudam nas suas pastas.")
+        let codeLabel = L("Código-fonte: ")
+        let codeURL = "https://github.com/allanpscheidt/the-styk"
+        let downloadLabel = L("Download: ")
+        let downloadURL = "https://setor101.com.br/apps/styk"
+        
+        let fullText = "\(baseText)\n\n\(codeLabel)\(codeURL)\n\(downloadLabel)\(downloadURL)"
+        
+        let font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        let attributedString = NSMutableAttributedString(string: fullText, attributes: [
+            .font: font,
+            .foregroundColor: NSColor.labelColor
+        ])
+        
+        if let codeRange = fullText.range(of: codeURL) {
+            let nsRange = NSRange(codeRange, in: fullText)
+            attributedString.addAttribute(.link, value: codeURL, range: nsRange)
+        }
+        if let downloadRange = fullText.range(of: downloadURL) {
+            let nsRange = NSRange(downloadRange, in: fullText)
+            attributedString.addAttribute(.link, value: downloadURL, range: nsRange)
+        }
+        
         let info = Bundle.main.infoDictionary
-        var options: [NSApplication.AboutPanelOptionKey: Any] = [.credits: credits]
+        var options: [NSApplication.AboutPanelOptionKey: Any] = [.credits: attributedString]
         options[.applicationVersion] = (info?["CFBundleShortVersionString"] as? String) ?? "1.0"
         if info?["NSHumanReadableCopyright"] == nil {
             options[NSApplication.AboutPanelOptionKey(rawValue: "Copyright")] = "© 2026 Allan Pscheidt"

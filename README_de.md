@@ -16,6 +16,17 @@ The Styk ist ein winziges Programm, das digitale Notizen an Ihren Finder-Ordnern
 
 Laden Sie The Styk unter https://setor101.com.br/apps/styk herunter, ziehen Sie es in Ihren Programme-Ordner und doppelklicken Sie auf das Symbol, um es zu starten.
 
+> [!NOTE]
+> **macOS Sicherheitswarnung (Gatekeeper)**
+>
+> Wenn die Warnung „Apple kann nicht überprüfen, ob dieses App frei von Schadsoftware ist...“ angezeigt wird, liegt dies daran, dass Apple von Entwicklern eine jährliche Gebühr verlangt, um Anwendungen digital zu signieren. Da The Styk ein kostenloses Open-Source-Projekt ist, halten wir diese finanzielle Anforderung für unabhängige Entwickler für ungerecht.
+> 
+> Um das App trotzdem zu öffnen:
+> 1. Versuchen Sie einmal, das App zu öffnen, um die Warnung auszulösen, und schließen Sie es dann.
+> 2. Gehen Sie auf Ihrem Mac zu **Systemeinstellungen** > **Datenschutz & Sicherheit**.
+> 3. Scrollen Sie nach unten zum Abschnitt **Sicherheit** und klicken Sie auf die Schaltfläche **Dennoch öffnen** unter der Meldung über `The Styk.app`.
+> 4. Geben Sie Ihr Passwort ein oder verwenden Sie Touch ID zur Bestätigung.
+
 ## Verwendung
 
 The Styk platziert ein Notizsymbol auf der rechten Seite Ihrer Menüleiste. Klicken Sie auf das Symbol, um das Menü anzuzeigen. Von hier aus können Sie **„Neue Notiz in diesem Ordner“** wählen, um eine Notiz zu erstellen. Schreiben Sie hinein; die Notiz speichert sich automatisch.

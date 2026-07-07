@@ -156,5 +156,7 @@ extension L10n {
         "Lista": "列表",
         "Finder não ativo": "Finder 未激活",
         "Abra uma pasta no Finder para criar uma nota adesiva nesta localização.": "请在 Finder 中打开一个文件夹，以便在此位置创建便笺。",
+        "Código-fonte: ": "源代码: ",
+        "Download: ": "下载: ",
     ]
 }

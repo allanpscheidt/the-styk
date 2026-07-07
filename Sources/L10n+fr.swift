@@ -156,5 +156,7 @@ extension L10n {
         "Lista": "Liste",
         "Finder não ativo": "Finder non actif",
         "Abra uma pasta no Finder para criar uma nota adesiva nesta localização.": "Ouvrez un dossier dans le Finder pour créer une note adhésive dans cet emplacement.",
+        "Código-fonte: ": "Code source: ",
+        "Download: ": "Téléchargement: ",
     ]
 }
