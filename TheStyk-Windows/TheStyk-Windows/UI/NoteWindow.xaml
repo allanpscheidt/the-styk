@@ -1,0 +1,157 @@
+<Window x:Class="TheStyk.UI.NoteWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="The Styk Note"
+        Height="240" Width="260"
+        MinHeight="140" MinWidth="160"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        WindowStartupLocation="Manual">
+
+    <Window.Resources>
+        <!-- Estilo dos botões de bolinhas de cor -->
+        <Style x:Key="ColorCircleButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Height" Value="14"/>
+            <Setter Property="Margin" Value="3,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse x:Name="circle" Fill="{TemplateBinding Background}"/>
+                            <Ellipse x:Name="border" Stroke="#2D000000" StrokeThickness="1"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Stroke" Value="#80000000"/>
+                                <Setter TargetName="border" Property="StrokeThickness" Value="1.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Estilo dos botões de texto da barra -->
+        <Style x:Key="ToolbarTextButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#1C1C1E"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="Margin" Value="2,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="#15000000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid x:Name="MainGrid" Margin="10">
+        <!-- Efeito de Sombra para dar profundidade de Post-It -->
+        <Border x:Name="CardBorder" CornerRadius="12" BorderThickness="1" BorderBrush="#12000000" Background="#FFE066" SnapsToDevicePixels="True">
+            <Border.Effect>
+                <DropShadowEffect Color="#000000" Opacity="0.18" BlurRadius="12" ShadowDepth="3" Direction="270"/>
+            </Border.Effect>
+            
+            <Grid>
+                <Grid.RowDefinitions>
+                    <!-- Área Superior: Título/Arraste e Barra de Ferramentas -->
+                    <RowDefinition Height="32"/>
+                    <!-- Área Central: Editor de Texto -->
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Área de Arraste Invisível de Background (para mover a nota clicando no topo) -->
+                <Grid Grid.Row="0" x:Name="TitleDragBar" Background="Transparent" MouseLeftButtonDown="TitleDragBar_MouseLeftButtonDown" Cursor="SizeAll"/>
+
+                <!-- Barra de Ferramentas Flutuante (Aparece no Hover) -->
+                <Border Grid.Row="0" x:Name="HoverToolbar" Background="Transparent" Opacity="0" Margin="5,2,5,2" HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <!-- Bolinhas de Cor -->
+                            <ColumnDefinition Width="Auto"/>
+                            <!-- Espaçador -->
+                            <ColumnDefinition Width="*"/>
+                            <!-- Ações (A-, A+, Aa, Share, Trash) -->
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Bolinhas de Cor -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Style="{StaticResource ColorCircleButtonStyle}" Background="#FFE066" Click="ColorButton_Click" Tag="yellow" ToolTip="Amarelo"/>
+                            <Button Style="{StaticResource ColorCircleButtonStyle}" Background="#FFB3C7" Click="ColorButton_Click" Tag="pink" ToolTip="Rosa"/>
+                            <Button Style="{StaticResource ColorCircleButtonStyle}" Background="#9AD1FF" Click="ColorButton_Click" Tag="blue" ToolTip="Azul"/>
+                            <Button Style="{StaticResource ColorCircleButtonStyle}" Background="#B5E8A0" Click="ColorButton_Click" Tag="green" ToolTip="Verde"/>
+                            <Button Style="{StaticResource ColorCircleButtonStyle}" Background="#FFC97A" Click="ColorButton_Click" Tag="orange" ToolTip="Laranja"/>
+                            <Button Style="{StaticResource ColorCircleButtonStyle}" Background="#D9BBFF" Click="ColorButton_Click" Tag="purple" ToolTip="Roxo"/>
+                        </StackPanel>
+
+                        <!-- Botões de Ação à Direita -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Style="{StaticResource ToolbarTextButtonStyle}" Content="A−" Click="SizeDownButton_Click" ToolTip="Diminuir Fonte (Ctrl + -)"/>
+                            <Button Style="{StaticResource ToolbarTextButtonStyle}" Content="A+" Click="SizeUpButton_Click" ToolTip="Aumentar Fonte (Ctrl + +)"/>
+                            <Button Style="{StaticResource ToolbarTextButtonStyle}" Content="Aa" Click="FontCycleButton_Click" ToolTip="Mudar Fonte"/>
+                            <Button Style="{StaticResource ToolbarTextButtonStyle}" Content="⎙" Click="ExportButton_Click" ToolTip="Exportar..."/>
+                            <Button Style="{StaticResource ToolbarTextButtonStyle}" Content="🗑" Click="DeleteButton_Click" Foreground="#D11A2A" ToolTip="Apagar Nota"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Área do Editor de Texto -->
+                <TextBox Grid.Row="1" x:Name="NoteTextBox"
+                         AcceptsReturn="True"
+                         AcceptsTab="True"
+                         TextWrapping="Wrap"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         Foreground="#1C1C1E"
+                         CaretBrush="#1C1C1E"
+                         Padding="12,0,12,12"
+                         FontSize="14"
+                         FontFamily="Segoe UI"
+                         VerticalScrollBarVisibility="Auto"
+                         TextChanged="NoteTextBox_TextChanged"
+                         KeyDown="NoteTextBox_KeyDown"/>
+            </Grid>
+        </Border>
+    </Grid>
+
+    <!-- Triggers de Animação de Opacidade para a Barra de Ferramentas (Fade In/Out no Hover) -->
+    <Window.Triggers>
+        <EventTrigger RoutedEvent="Mouse.MouseEnter">
+            <BeginStoryboard>
+                <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="HoverToolbar"
+                                     Storyboard.TargetProperty="Opacity"
+                                     To="1.0" Duration="0:0:0.2"/>
+                </Storyboard>
+            </BeginStoryboard>
+        </EventTrigger>
+        <EventTrigger RoutedEvent="Mouse.MouseLeave">
+            <BeginStoryboard>
+                <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="HoverToolbar"
+                                     Storyboard.TargetProperty="Opacity"
+                                     To="0.0" Duration="0:0:0.25"/>
+                </Storyboard>
+            </BeginStoryboard>
+        </EventTrigger>
+    </Window.Triggers>
+</Window>

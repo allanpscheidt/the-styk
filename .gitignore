@@ -3,3 +3,11 @@ build/
 .snapshot-pre-ux/
 *.zip
 *.dmg
+
+# C# / Windows ignores
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+*.userosx
