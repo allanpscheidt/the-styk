@@ -1,5 +1,12 @@
 # The Styk
-<img src="assets/logo.png" width="128" alt="The Styk Logo" />
+
+<p align="center">
+  <img src="assets/logo.png" width="128" alt="The Styk Logo" /><br>
+  <sub>
+    <b>Versões:</b> Apple Silicon (macOS 11+) | Apple Intel (macOS 10.15+)<br>
+    <b>Idiomas:</b> Português (Brasil), English, Deutsch, Français, 日本語, 简体中文
+  </sub>
+</p>
 
 Notas que moram dentro das pastas do seu Mac.
 

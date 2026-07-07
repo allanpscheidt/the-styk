@@ -1,5 +1,12 @@
 # The Styk
-<img src="assets/logo.png" width="128" alt="The Styk Logo" />
+
+<p align="center">
+  <img src="assets/logo.png" width="128" alt="The Styk Logo" /><br>
+  <sub>
+    <b>版本:</b> Apple Silicon (macOS 11+) | Apple Intel (macOS 10.15+)<br>
+    <b>语言:</b> Português (Brasil), English, Deutsch, Français, 日本語, 简体中文
+  </sub>
+</p>
 
 住在 Mac 文件夹里的数字化便签。
 
