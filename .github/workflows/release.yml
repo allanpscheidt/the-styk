@@ -47,7 +47,7 @@ jobs:
 
       - name: Build and Publish Single-File
         run: |
-          dotnet publish TheStyk-Windows/TheStyk-Windows.sln -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o build_win
+          dotnet publish TheStyk-Windows/TheStyk-Windows/TheStyk-Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o build_win
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4

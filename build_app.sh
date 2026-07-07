@@ -37,11 +37,13 @@ cp -R Localization/*.lproj "$BUNDLE/Contents/Resources/"
 echo "→ assinando Apple Silicon (ad-hoc, hardened runtime)…"
 codesign --force --sign - --options runtime --entitlements StickIE.entitlements "$BUNDLE"
 
-# Copiar para Applications para uso local
-echo "→ instalando em /Applications…"
-pkill -x "$APP" 2>/dev/null || true
-rm -rf "/Applications/$APP.app"
-cp -R "$BUNDLE" "/Applications/$APP.app"
+# Copiar para Applications para uso local (ignorado no GitHub Actions)
+if [ "${GITHUB_ACTIONS:-false}" != "true" ]; then
+    echo "→ instalando em /Applications…"
+    pkill -x "$APP" 2>/dev/null || true
+    rm -rf "/Applications/$APP.app"
+    cp -R "$BUNDLE" "/Applications/$APP.app"
+fi
 
 # Criar ZIP da Silicon
 ditto -c -k --keepParent "$BUNDLE" "$BUILD/$APP-Silicon.zip"
