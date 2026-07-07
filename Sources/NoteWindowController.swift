@@ -735,6 +735,7 @@ private final class NoteTextView: NSTextView {
             default: break
             }
         }
+        return super.performKeyEquivalent(with: event)
     }
 }
 
