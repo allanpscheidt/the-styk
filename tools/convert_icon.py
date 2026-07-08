@@ -107,8 +107,14 @@ def convert_image(input_path, output_dir, project_root, thickness_boost=15):
         print(f"Generated {out_path} ({size}x{size})")
 
 if __name__ == "__main__":
-    input_img = "/Users/allanpscheidt/.gemini/antigravity/brain/840c53ef-56e1-4a77-9ca4-f28ef99df7d3/menu_bar_icon_1783378883673.jpg"
-    project_root = "/Users/allanpscheidt/Documents/_Antigravity/apps/StickIE"
+    if len(sys.argv) < 2:
+        print("Uso: python convert_icon.py <caminho_imagem_entrada> [caminho_projeto]")
+        sys.exit(1)
+        
+    input_img = sys.argv[1]
+    project_root = sys.argv[2] if len(sys.argv) > 2 else os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     output_dir = os.path.join(project_root, "build/AppIcon.iconset")
-    # Using thickness_boost=15 (which is about 7px expansion on each side in high-res)
+    
+    # Usando thickness_boost=15 (que equivale a uma expansão de ~7px em cada lado na alta resolução)
     convert_image(input_img, output_dir, project_root, thickness_boost=15)
+

@@ -1,6 +1,6 @@
 # The Styk (Versão Microsoft Windows)
 
-Esta é a versão para Microsoft Windows do **The Styk** (StickIE), portada nativamente da versão macOS (Swift/AppKit) para **C# / WPF** (Windows Presentation Foundation) sobre o **.NET 8.0-windows**.
+Esta é a versão para Microsoft Windows do **The Styk**, portada nativamente da versão macOS (Swift/AppKit) para **C# / WPF** (Windows Presentation Foundation) sobre o **.NET 8.0-windows**.
 
 As notas digitais são vinculadas dinamicamente às pastas do Windows Explorer, aparecendo na tela apenas enquanto a pasta na qual foram criadas está em foco/primeiro plano.
 

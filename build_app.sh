@@ -35,7 +35,7 @@ cp "$BUILD/AppIcon.iconset/StatusBarIcon@2x.png" "$BUNDLE/Contents/Resources/Sta
 cp -R Localization/*.lproj "$BUNDLE/Contents/Resources/"
 
 echo "→ assinando Apple Silicon (ad-hoc, hardened runtime)…"
-codesign --force --sign - --options runtime --entitlements StickIE.entitlements "$BUNDLE"
+codesign --force --sign - --options runtime --entitlements TheStyk.entitlements "$BUNDLE"
 
 # Copiar para Applications para uso local (ignorado no GitHub Actions)
 if [ "${GITHUB_ACTIONS:-false}" != "true" ]; then
@@ -71,7 +71,7 @@ cp "$BUILD/AppIcon.iconset/StatusBarIcon@2x.png" "$LEGACY/Contents/Resources/Sta
 cp -R Localization/*.lproj "$LEGACY/Contents/Resources/"
 
 echo "→ assinando versão Intel (ad-hoc, hardened runtime)…"
-codesign --force --sign - --options runtime --entitlements StickIE.entitlements "$LEGACY"
+codesign --force --sign - --options runtime --entitlements TheStyk.entitlements "$LEGACY"
 
 # Criar ZIP da Intel
 ditto -c -k --keepParent "$LEGACY" "$BUILD/$APP-Intel.zip"
