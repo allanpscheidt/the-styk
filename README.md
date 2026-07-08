@@ -3,7 +3,7 @@
 <p align="center">
   <img src="assets/logo.png" width="128" alt="The Styk Logo" /><br>
   <sub>
-    <b>Versions:</b> macOS (Apple Silicon 11+ / Intel 10.15+) | Windows 10/11<br>
+    <b>Versions:</b> macOS (Apple Silicon 11+ / Intel 10.15+) | Windows 10/11 | Linux (GNOME/Nautilus)<br>
     <b>Languages:</b> Português (Brasil), English, Deutsch, Français, 日本語, 简体中文
   </sub>
 </p>
@@ -30,6 +30,24 @@ Download The Styk for macOS at https://setor101.com.br/apps/styk or from the Git
 
 ### Windows
 Download the latest `TheStyk-Windows-x64.exe` from the [Releases](https://github.com/allanpscheidt/the-styk/releases) page and run it to start anchoring notes to your File Explorer folders.
+
+### Linux
+To run The Styk on Linux (specifically GNOME/Nautilus environments):
+
+1. **Install System Dependencies**:
+   - **Ubuntu/Debian**:
+     ```bash
+     sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-appindicator3-0.1
+     ```
+   - **Fedora**:
+     ```bash
+     sudo dnf install python3-gobject gtk3 libappindicator-gtk3
+     ```
+2. **Download & Run**:
+   Navigate to the `TheStyk-Linux` directory and run the launcher script:
+   ```bash
+   ./run.sh
+   ```
 
 ## Usage
 
