@@ -3,18 +3,19 @@
 <p align="center">
   <img src="assets/logo.png" width="128" alt="The Styk Logo" /><br>
   <sub>
-    <b>Versões:</b> Apple Silicon (macOS 11+) | Apple Intel (macOS 10.15+)<br>
+    <b>Versões:</b> macOS (Apple Silicon 11+ / Intel 10.15+) | Windows 10/11<br>
     <b>Idiomas:</b> Português (Brasil), English, Deutsch, Français, 日本語, 简体中文
   </sub>
 </p>
 
-Notas que moram dentro das pastas do seu Mac.
+Notas digitais que moram dentro das suas pastas.
 
-O The Styk é um programa minimalista que mantém notas digitais ancoradas às suas pastas do Finder. A nota flutua na tela enquanto você está na pasta onde a criou — saia da pasta, ela some; volte, ela reaparece.
+O The Styk é um programa minimalista que mantém notas digitais ancoradas às suas pastas. A nota flutua na tela enquanto você está na pasta onde a criou (Finder no macOS ou File Explorer no Windows) — saia da pasta, ela some; volte, ela reaparece.
 
 ## Instalação
 
-Baixe o The Styk em https://setor101.com.br/apps/styk e arraste-o para a sua pasta de Aplicativos, então clique duas vezes no ícone para iniciá-lo.
+### macOS
+Baixe o The Styk para macOS em https://setor101.com.br/apps/styk ou na página de [Releases](https://github.com/allanpscheidt/the-styk/releases) e arraste-o para a sua pasta de Aplicativos, então clique duas vezes no ícone para iniciá-lo.
 
 > [!NOTE]
 > **Aviso de Bloqueio do macOS (Gatekeeper)**
@@ -26,6 +27,9 @@ Baixe o The Styk em https://setor101.com.br/apps/styk e arraste-o para a sua pas
 > 2. Acesse **Ajustes do Sistema** > **Privacidade e Segurança** no seu Mac.
 > 3. Role até a seção **Segurança** e clique no botão **Abrir Mesmo Assim** logo abaixo da mensagem sobre o `The Styk.app`.
 > 4. Insira sua senha ou use o Touch ID para confirmar.
+
+### Windows
+Baixe a versão mais recente de `TheStyk-Windows-x64.exe` na página de [Releases](https://github.com/allanpscheidt/the-styk/releases) e execute-a para começar a ancorar notas às pastas do File Explorer.
 
 ## Como Usar
 
@@ -66,4 +70,4 @@ Apagar é totalmente reversível. As notas apagadas vão para a Lixeira interna 
 A versão principal para Apple Silicon exige o macOS 11 (Big Sur) ou posterior. No entanto, existe uma versão Intel legada disponível que roda no macOS 10.15 (Catalina) e posteriores.
 
 ### Como o The Styk é diferente das notas autoadesivas padrão?
-Diferente dos apps de notas comuns onde as notas poluem sua mesa indefinidamente, o The Styk ancora as notas contextualmente a pastas específicas. Elas só aparecem quando você realmente abre e visualiza aquela pasta no Finder.
+Diferente dos apps de notas comuns onde as notas poluem sua mesa indefinidamente, o The Styk ancora as notas contextualmente a pastas específicas. Elas só aparecem quando você realmente abre e visualiza aquela pasta no Finder (macOS) ou File Explorer (Windows).

@@ -3,18 +3,19 @@
 <p align="center">
   <img src="assets/logo.png" width="128" alt="The Styk Logo" /><br>
   <sub>
-    <b>Versions:</b> Apple Silicon (macOS 11+) | Apple Intel (macOS 10.15+)<br>
+    <b>Versions:</b> macOS (Apple Silicon 11+ / Intel 10.15+) | Windows 10/11<br>
     <b>Languages:</b> Português (Brasil), English, Deutsch, Français, 日本語, 简体中文
   </sub>
 </p>
 
-Digital notes that live inside your Mac folders.
+Digital notes that live inside your folders.
 
-The Styk is a tiny program that keeps digital notes anchored to your Finder folders. The notes float on the screen while you are in the folder where you created them -- leave the folder, they disappear; return, they reappear.
+The Styk is a tiny program that keeps digital notes anchored to your folders. The notes float on the screen while you are in the folder where you created them (Finder on macOS or File Explorer on Windows) -- leave the folder, they disappear; return, they reappear.
 
 ## Installation
 
-Download The Styk at https://setor101.com.br/apps/styk and drag it into your Applications folder, then double-click the icon to launch it.
+### macOS
+Download The Styk for macOS at https://setor101.com.br/apps/styk or from the GitHub [Releases](https://github.com/allanpscheidt/the-styk/releases) page and drag it into your Applications folder, then double-click the icon to launch it.
 
 > [!NOTE]
 > **macOS Security Warning (Gatekeeper)**
@@ -26,6 +27,9 @@ Download The Styk at https://setor101.com.br/apps/styk and drag it into your App
 > 2. Go to **System Settings** > **Privacy & Security** on your Mac.
 > 3. Scroll down to the **Security** section and click the **Open Anyway** button below the message about `The Styk.app`.
 > 4. Enter your password or use Touch ID to confirm.
+
+### Windows
+Download the latest `TheStyk-Windows-x64.exe` from the [Releases](https://github.com/allanpscheidt/the-styk/releases) page and run it to start anchoring notes to your File Explorer folders.
 
 ## Usage
 
@@ -66,4 +70,4 @@ Deletion is fully reversible. Deleted notes go to the app's internal Trash (acce
 The primary Apple Silicon version requires macOS 11 (Big Sur) or later. However, an Intel legacy version is available that runs on macOS 10.15 (Catalina) and newer.
 
 ### How is The Styk different from standard sticky notes?
-Unlike standard sticky note apps where notes clutter your desktop indefinitely, The Styk contextually anchors notes to specific folders. They only appear when you actually open and view that folder in Finder.
+Unlike standard sticky note apps where notes clutter your desktop indefinitely, The Styk contextually anchors notes to specific folders. They only appear when you actually open and view that folder in Finder (macOS) or File Explorer (Windows).
