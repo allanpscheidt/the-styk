@@ -86,6 +86,11 @@ ln -s /Applications "$TEMP_DMG_INTEL/Applications"
 hdiutil create -volname "The Styk (Intel)" -srcfolder "$TEMP_DMG_INTEL" -ov -format UDZO "$BUILD/The Styk-Intel.dmg"
 rm -rf "$TEMP_DMG_INTEL"
 
+# 4. Empacotar versão Linux
+echo "→ empacotando versão Linux..."
+zip -r "$BUILD/TheStyk-Linux.zip" TheStyk-Linux -x "*/__pycache__/*" -x "*.pyc" -x "*.DS_Store" > /dev/null
+
 echo "✓ Pronto!"
 echo "✓ Apple Silicon DMG: $BUILD/The Styk-Silicon.dmg (macOS 11.0+)"
 echo "✓ Apple Intel DMG: $BUILD/The Styk-Intel.dmg (macOS 10.15+)"
+echo "✓ Linux ZIP: $BUILD/TheStyk-Linux.zip (GNOME/Nautilus)"
