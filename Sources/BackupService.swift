@@ -1,8 +1,22 @@
 import AppKit
+import Darwin
 
-/// Backup local em zip (via /usr/bin/ditto — executável constante, caminhos vêm
-/// do nosso diretório de dados ou de NSSave/OpenPanel, nunca de conteúdo de nota).
+/// Local backups use ditto only to create ZIPs. Restore uses a bounded ZIP reader
+/// and a validated, durable directory transaction, never an external extractor.
 enum BackupService {
+    enum RestoreResult: Equatable {
+        case restored(Int)
+        case unchanged
+        /// Commit/rollback durability is uncertain; both stores are retained.
+        case recoveryRequired(URL)
+
+        static func fromFailure(_ error: Error) -> RestoreResult {
+            if case BackupRestoreTransaction.Failure.rollbackFailed(let directory) = error {
+                return .recoveryRequired(directory)
+            }
+            return .unchanged
+        }
+    }
 
     static let autoKey = "thestyk.autoBackup"
     static let valueKey = "thestyk.autoBackupValue"
@@ -18,7 +32,7 @@ enum BackupService {
     /// Inicia o agendador de backup periódico (verificação imediata e a cada 15 min).
     static func startPeriodicTimer() {
         checkTimer?.invalidate()
-        guard UserDefaults.standard.bool(forKey: autoKey) else { return }
+        guard UserDefaults.standard.bool(forKey: autoKey), !PasswordService.hasPassword else { return }
         
         checkAndRunBackup()
         
@@ -35,7 +49,7 @@ enum BackupService {
     }
 
     static func checkAndRunBackup() {
-        guard UserDefaults.standard.bool(forKey: autoKey) else { return }
+        guard UserDefaults.standard.bool(forKey: autoKey), !PasswordService.hasPassword else { return }
         
         let value = UserDefaults.standard.integer(forKey: valueKey)
         let val = value > 0 ? value : 1
@@ -67,9 +81,10 @@ enum BackupService {
         }
     }
 
-    /// Zipa index.json + notes/ (via staging — nunca inclui a pasta Backups).
+    /// Captures index, active notes, trash and bookmarks, without the backup folder.
     @discardableResult
-    static func makeBackup(to dest: URL) -> Bool {
+    static func makeBackup(to dest: URL, authorization: PasswordService.Authorization? = nil) -> Bool {
+        guard PasswordService.consumeAuthorization(authorization, for: .backup) else { return false }
         let fm = FileManager.default
         let data = NoteStore.shared.dataDirectory
         guard fm.fileExists(atPath: data.appendingPathComponent("index.json").path) else { return false }
@@ -77,77 +92,101 @@ enum BackupService {
         let stageRoot = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("TheStyk-stage-" + UUID().uuidString, isDirectory: true)
         let stage = stageRoot.appendingPathComponent("The Styk", isDirectory: true)
-        defer { try? fm.removeItem(at: stageRoot) }
+        let destinationParent = dest.deletingLastPathComponent().resolvingSymlinksInPath()
+        let liveRoot = data.resolvingSymlinksInPath()
+        let insideLive = destinationParent.path == liveRoot.path || destinationParent.path.hasPrefix(liveRoot.path + "/")
+        // A restore can exchange the complete live root while ditto runs. Keep its
+        // output outside that root, on the destination's filesystem, until publish.
+        let outputParent = insideLive ? data.deletingLastPathComponent() : destinationParent
+        let outputRoot = outputParent.appendingPathComponent(".TheStyk-backup-" + UUID().uuidString, isDirectory: true)
+        let output = outputRoot.appendingPathComponent("backup.zip")
+        defer {
+            try? fm.removeItem(at: stageRoot)
+            try? fm.removeItem(at: outputRoot)
+        }
         do {
-            try fm.createDirectory(at: stage, withIntermediateDirectories: true)
-            try fm.copyItem(at: data.appendingPathComponent("index.json"),
-                            to: stage.appendingPathComponent("index.json"))
-            let notes = data.appendingPathComponent("notes", isDirectory: true)
-            if fm.fileExists(atPath: notes.path) {
-                try fm.copyItem(at: notes, to: stage.appendingPathComponent("notes"))
+            try BackupFiles.createPrivateDirectory(stageRoot)
+            try BackupFiles.createPrivateDirectory(stage)
+            try BackupFiles.createPrivateDirectory(outputRoot)
+            // NoteStore mutations run on the main thread. Capture the complete corpus
+            // there so the index, active notes, trash, and bookmarks are one snapshot.
+            let snapshot = {
+                guard PasswordService.canAccessNotes else { throw BackupRestoreTransaction.Failure.invalidStore }
+                for name in ["index.json", "notes", "trash", "folders.json"] {
+                    let source = data.appendingPathComponent(name)
+                    if fm.fileExists(atPath: source.path) {
+                        try fm.copyItem(at: source, to: stage.appendingPathComponent(name))
+                    }
+                }
             }
+            if Thread.isMainThread { try snapshot() }
+            else { try DispatchQueue.main.sync(execute: snapshot) }
+            _ = try BackupRestoreTransaction.validateStore(stage)
         } catch { return false }
-        try? fm.removeItem(at: dest)
-        return runDitto(["-c", "-k", "--keepParent", stage.path, dest.path])
+        let createArguments = ["-c", "-k", "--norsrc", "--noextattr", "--noqtn", "--noacl", "--keepParent"]
+        guard runDitto(createArguments + [stage.path, output.path]),
+              chmod(output.path, 0o600) == 0 else { return false }
+        // Validate the produced ZIP too. An incomplete or unsupported backup never
+        // replaces a previous destination file.
+        let verify = stageRoot.appendingPathComponent("verify", isDirectory: true)
+        do {
+            try BackupArchive.extract(output, to: verify)
+        } catch BackupArchive.Failure.compressionRatioExceeded {
+            // Repeated legitimate text may compress beyond the restore ratio cap.
+            // Recreate that snapshot without compression rather than emit a backup
+            // that the same application would reject, then run every limit again.
+            do { try fm.removeItem(at: output) } catch { return false }
+            guard runDitto(createArguments + ["--zlibCompressionLevel", "0", stage.path, output.path]),
+                  chmod(output.path, 0o600) == 0 else { return false }
+            do { try BackupArchive.extract(output, to: verify) } catch { return false }
+        } catch { return false }
+        let publish = { PasswordService.canAccessNotes && rename(output.path, dest.path) == 0 }
+        if Thread.isMainThread { return publish() }
+        return DispatchQueue.main.sync(execute: publish)
     }
 
-    /// Restaura de um zip. Devolve o nº de notas restauradas, ou -1 (arquivo inválido —
-    /// nesse caso NADA foi alterado). Anti zip-slip: extrai em tmp e copia SÓ os
-    /// arquivos esperados (index.json + notes/<UUID>.json regulares, com limites).
-    static func restore(from zip: URL) -> Int {
-        let fm = FileManager.default
-        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("TheStyk-restore-" + UUID().uuidString, isDirectory: true)
-        defer { try? fm.removeItem(at: tmp) }
-
-        guard runDitto(["-x", "-k", zip.path, tmp.path]),
-              let root = findDataRoot(in: tmp) else { return -1 }
-
-        // Valida o índice ANTES de tocar nos dados atuais.
-        let newIndex = root.appendingPathComponent("index.json")
-        guard isRegularFile(newIndex, maxBytes: 5 * 1024 * 1024) else { return -1 }
-
-        let data = NoteStore.shared.dataDirectory
-        let liveNotes = data.appendingPathComponent("notes", isDirectory: true)
-        try? fm.removeItem(at: liveNotes)
-        try? fm.createDirectory(at: liveNotes, withIntermediateDirectories: true)
-
-        var count = 0
-        let restored = root.appendingPathComponent("notes", isDirectory: true)
-        for f in (try? fm.contentsOfDirectory(at: restored, includingPropertiesForKeys: [.isRegularFileKey])) ?? [] {
-            let name = f.lastPathComponent
-            guard name.hasSuffix(".json"),
-                  UUID(uuidString: String(name.dropLast(5))) != nil,   // nome tem de ser UUID.json
-                  isRegularFile(f, maxBytes: 2 * 1024 * 1024),
-                  (try? fm.copyItem(at: f, to: liveNotes.appendingPathComponent(name))) != nil
-            else { continue }
-            count += 1
+    /// Distinguishes safe rejection from a commit failure that needs recovery.
+    /// Invalid ZIPs/stores and failed preparation never touch the live directory.
+    static func restore(from zip: URL, authorization: PasswordService.Authorization? = nil) -> RestoreResult {
+        guard PasswordService.consumeAuthorization(authorization, for: .restore) else { return .unchanged }
+        do {
+            let count = try BackupRestoreTransaction.restore(zip, to: NoteStore.shared.dataDirectory,
+                fault: { step in
+                    if step == .beforeSwap {
+                        guard PasswordService.canAccessNotes else { throw BackupRestoreTransaction.Failure.invalidStore }
+                        NoteWindowManager.shared.prepareForRestore()
+                        guard PasswordService.canAccessNotes else { throw BackupRestoreTransaction.Failure.invalidStore }
+                    }
+                },
+                serializeCommit: { action in
+                    if Thread.isMainThread {
+                        guard PasswordService.canAccessNotes else { throw BackupRestoreTransaction.Failure.invalidStore }
+                        let count = try action()
+                        NoteStore.shared.reloadFromDisk()
+                        return count
+                    }
+                    return try DispatchQueue.main.sync {
+                        guard PasswordService.canAccessNotes else { throw BackupRestoreTransaction.Failure.invalidStore }
+                        let count = try action()
+                        NoteStore.shared.reloadFromDisk()
+                        return count
+                    }
+                })
+            return .restored(count)
+        } catch {
+            NSLog("The Styk: backup restore failed (%@)", String(describing: type(of: error)))
+            let result = RestoreResult.fromFailure(error)
+            if case .recoveryRequired = result {
+                // The swap may have installed the replacement despite a later
+                // rollback failure. Never keep the old in-memory index over it.
+                if Thread.isMainThread { NoteStore.shared.reloadFromDisk() }
+                else { DispatchQueue.main.sync { NoteStore.shared.reloadFromDisk() } }
+            }
+            return result
         }
-        try? fm.removeItem(at: data.appendingPathComponent("index.json"))
-        try? fm.copyItem(at: newIndex, to: data.appendingPathComponent("index.json"))
-        return count
     }
 
     // MARK: - Helpers
-
-    /// index.json na raiz do zip ou um nível abaixo (layout The Styk/…).
-    private static func findDataRoot(in dir: URL) -> URL? {
-        let fm = FileManager.default
-        if fm.fileExists(atPath: dir.appendingPathComponent("index.json").path) { return dir }
-        for sub in (try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)) ?? []
-        where fm.fileExists(atPath: sub.appendingPathComponent("index.json").path) {
-            return sub
-        }
-        return nil
-    }
-
-    /// Regular de verdade (symlink extraído de zip malicioso não passa) e dentro do limite.
-    private static func isRegularFile(_ url: URL, maxBytes: Int) -> Bool {
-        guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
-              values.isRegularFile == true,
-              (values.fileSize ?? .max) <= maxBytes else { return false }
-        return true
-    }
 
     private static func prune() {
         let fm = FileManager.default
@@ -161,7 +200,17 @@ enum BackupService {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
         p.arguments = args
+        p.standardOutput = FileHandle.nullDevice
+        p.standardError = FileHandle.nullDevice
+        let completed = DispatchSemaphore(value: 0)
+        p.terminationHandler = { _ in completed.signal() }
         do { try p.run() } catch { return false }
+        if completed.wait(timeout: .now() + 30) == .timedOut {
+            p.terminate()
+            if completed.wait(timeout: .now() + 2) == .timedOut { kill(p.processIdentifier, SIGKILL) }
+            p.waitUntilExit()
+            return false
+        }
         p.waitUntilExit()
         return p.terminationStatus == 0
     }

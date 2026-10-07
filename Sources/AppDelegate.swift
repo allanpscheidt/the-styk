@@ -7,6 +7,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var menuController: StatusMenuController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        PasswordService.beginSession()
+        PasswordService.startSessionMonitoring()
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = item.button {
             let image = NSImage(named: "StatusBarIcon")
@@ -33,7 +35,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         showWelcomeOnce()
         
         // Abre a janela de preferências no início
-        PreferencesWindowController.shared.show(finder: observer)
+        if PasswordService.canAccessNotes {
+            PreferencesWindowController.shared.show(finder: observer)
+        }
         
         // Registra atalho global de teclado (⌥⌘N)
         GlobalShortcutService.shared.onTrigger = { [weak self] in
@@ -44,9 +48,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         NoteWindowManager.shared.flushAll()
+        PasswordService.lock()
     }
 
     private func handleCreateNoteShortcut() {
+        guard PasswordService.authenticateForAccess() else { return }
         let isFinderFront = NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.finder"
         if isFinderFront, let folder = finderObserver?.currentFolder {
             _ = NoteStore.shared.createNote(

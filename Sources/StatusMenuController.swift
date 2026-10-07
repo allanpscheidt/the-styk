@@ -36,7 +36,8 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     }
 
     @objc private func lockStateChanged() {
-        // Recria os itens na próxima abertura
+        if PasswordService.isLocked { menu.cancelTracking() }
+        menuNeedsUpdate(menu)
     }
 
     // MARK: - NSMenuDelegate
@@ -45,6 +46,16 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     // Notas completas só são carregadas no clique, via representedObject.
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
+        if PasswordService.isLocked {
+            let unlock = NSMenuItem(title: L("Desbloquear Notas..."), action: #selector(unlockNotes), keyEquivalent: "")
+            unlock.target = self
+            unlock.image = Self.symbol("lock.open")
+            menu.addItem(unlock)
+            let quit = NSMenuItem(title: L("Sair do The Styk"), action: #selector(quitApp), keyEquivalent: "q")
+            quit.target = self
+            menu.addItem(quit)
+            return
+        }
 
         // 1. Nova nota
         if let folder = finder.currentFolder {
@@ -219,15 +230,9 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         return item
     }
 
-    /// Guardrail: só abre se existe, é diretório e NÃO é pacote (índice adulterado não lança .app).
-    /// Symlinks são resolvidos ANTES da validação — o alvo real é o que conta.
+    /// Usa a mesma validação da galeria e da restauração.
     private static func isValidFolder(_ path: String) -> Bool {
-        let url = URL(fileURLWithPath: path).resolvingSymlinksInPath()
-        var isDir: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir),
-              isDir.boolValue else { return false }
-        let isPackage = (try? url.resourceValues(forKeys: [.isPackageKey]).isPackage) ?? false
-        return !isPackage
+        SafeFolderAccess.validatedURL(for: path) != nil
     }
 
     /// Símbolo SF em tamanho de menu (~16 pt), template. Nil em macOS < 11: item fica só com texto.
@@ -278,37 +283,39 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     // MARK: - Ações
 
     @objc private func newNote(_ sender: NSMenuItem) {
+        guard PasswordService.canAccessNotes else { return }
         guard let folder = sender.representedObject as? String else { return }
         _ = NoteStore.shared.createNote(inFolder: folder,
                                         frame: NoteWindowManager.shared.suggestedFrame())
     }
 
     @objc private func openFolder(_ sender: NSMenuItem) {
-        guard let folder = sender.representedObject as? String,
-              Self.isValidFolder(folder) else { return }   // revalida no clique
-        // Abre o alvo resolvido — o mesmo que foi validado.
-        NSWorkspace.shared.open(URL(fileURLWithPath: folder, isDirectory: true).resolvingSymlinksInPath())
+        guard PasswordService.canAccessNotes else { return }
+        guard let folder = sender.representedObject as? String else { return }
+        SafeFolderAccess.open(folder)
     }
 
     @objc private func exportNote(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? UUID,
               let note = NoteStore.shared.loadNote(id: id) else { return }
-        ExportService.share(note: note, relativeTo: nil)
+        let authorization = PasswordService.requestAuthorization(for: .export, reason: L("Exportar nota"))
+        ExportService.share(note: note, relativeTo: nil, authorization: authorization)
     }
 
     @objc private func deleteNote(_ sender: NSMenuItem) {
-        guard let id = sender.representedObject as? UUID else { return }
-        // Sem alerta: recuperável — fica 5 dias na Lixeira do app.
-        NoteStore.shared.moveToTrash(id: id)
+        guard PasswordService.canAccessNotes, let id = sender.representedObject as? UUID else { return }
+        let authorization = PasswordService.requestAuthorization(for: .moveToTrash, reason: L("Mover para a Lixeira"))
+        NoteStore.shared.moveToTrash(id: id, authorization: authorization)
     }
 
     @objc private func restoreNote(_ sender: NSMenuItem) {
-        guard let id = sender.representedObject as? UUID else { return }
-        NoteStore.shared.restoreFromTrash(id: id)
+        guard PasswordService.canAccessNotes, let id = sender.representedObject as? UUID else { return }
+        let authorization = PasswordService.requestAuthorization(for: .restoreFromTrash, reason: L("Restaurar"))
+        NoteStore.shared.restoreFromTrash(id: id, authorization: authorization)
     }
 
     @objc private func deleteForever(_ sender: NSMenuItem) {
-        guard let id = sender.representedObject as? UUID else { return }
+        guard PasswordService.canAccessNotes, let id = sender.representedObject as? UUID else { return }
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
         alert.messageText = L("Apagar definitivamente?")
@@ -318,11 +325,13 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         if #available(macOS 11.0, *) { button.hasDestructiveAction = true }
         alert.addButton(withTitle: L("Cancelar"))
         if alert.runModal() == .alertFirstButtonReturn {
-            NoteStore.shared.deletePermanently(id: id)
+            let authorization = PasswordService.requestAuthorization(for: .deletePermanently, reason: L("Apagar definitivamente?"))
+            NoteStore.shared.deletePermanently(id: id, authorization: authorization)
         }
     }
 
     @objc private func emptyTrashAction() {
+        guard PasswordService.canAccessNotes else { return }
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
         alert.messageText = L("Esvaziar a Lixeira?")
@@ -332,11 +341,13 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         if #available(macOS 11.0, *) { button.hasDestructiveAction = true }
         alert.addButton(withTitle: L("Cancelar"))
         if alert.runModal() == .alertFirstButtonReturn {
-            NoteStore.shared.emptyTrash()
+            let authorization = PasswordService.requestAuthorization(for: .emptyTrash, reason: L("Esvaziar a Lixeira?"))
+            NoteStore.shared.emptyTrash(authorization: authorization)
         }
     }
 
     @objc private func reattachOrphan(_ sender: NSMenuItem) {
+        guard PasswordService.canAccessNotes else { return }
         guard let id = sender.representedObject as? UUID else { return }
         NSApp.activate(ignoringOtherApps: true)
         let panel = NSOpenPanel()
@@ -359,37 +370,18 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     }
 
     @objc private func lockNotes() {
-        PasswordService.isLocked = true
+        PasswordService.lock()
     }
 
     @objc private func unlockNotes() {
-        NSApp.activate(ignoringOtherApps: true)
-        let alert = NSAlert()
-        alert.messageText = L("Desbloquear Notas")
-        alert.informativeText = L("Digite a senha para visualizar e editar suas notas.")
-        alert.addButton(withTitle: L("Confirmar"))
-        alert.addButton(withTitle: L("Cancelar"))
-        
-        let input = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 220, height: 24))
-        alert.accessoryView = input
-        alert.window.initialFirstResponder = input
-        
-        let response = alert.runModal()
-        if response == .alertFirstButtonReturn {
-            let pass = input.stringValue
-            if PasswordService.verifyPassword(pass) {
-                PasswordService.isLocked = false
-            } else {
-                let err = NSAlert()
-                err.messageText = L("Senha incorreta")
-                err.informativeText = L("A senha digitada está incorreta. Tente novamente.")
-                err.addButton(withTitle: L("Ok"))
-                err.runModal()
-            }
-        }
+        PasswordService.authenticateForAccess()
     }
 
     @objc private func statusItemClicked(_ sender: NSStatusBarButton) {
+        if PasswordService.isLocked {
+            statusItem.popUpMenu(menu)
+            return
+        }
         let event = NSApp.currentEvent
         let isRightClick = event?.type == .rightMouseUp
         let isCmdClick = event?.modifierFlags.contains(.command) == true
@@ -402,6 +394,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     }
 
     private func showPasswordSettings() {
+        guard PasswordService.canAccessNotes else { return }
         NSApp.activate(ignoringOtherApps: true)
         if !PasswordService.hasPassword {
             // Definir senha
@@ -420,6 +413,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
                 let pass = input.stringValue
                 if !pass.isEmpty {
                     PasswordService.setPassword(pass)
+                    BackupService.startPeriodicTimer()
                     let info = NSAlert()
                     info.messageText = L("Senha definida")
                     info.informativeText = L("A senha foi cadastrada. Suas notas agora podem ser protegidas.")
@@ -442,7 +436,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
             let response = alert.runModal()
             if response == .alertFirstButtonReturn {
                 let currentPass = currentInput.stringValue
-                if PasswordService.verifyPassword(currentPass) {
+                if let authorization = PasswordService.authorize(withPassword: currentPass, for: .passwordChange) {
                     // Senha atual correta! Agora pergunte pela nova senha
                     let newAlert = NSAlert()
                     newAlert.messageText = L("Digite a nova senha")
@@ -457,7 +451,8 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
                     let newResponse = newAlert.runModal()
                     if newResponse == .alertFirstButtonReturn {
                         let newPass = newInput.stringValue
-                        PasswordService.setPassword(newPass)
+                        guard PasswordService.setPassword(newPass, authorization: authorization) else { return }
+                        BackupService.startPeriodicTimer()
                         let info = NSAlert()
                         if newPass.isEmpty {
                             info.messageText = L("Senha removida")

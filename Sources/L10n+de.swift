@@ -3,6 +3,8 @@ import Foundation
 // Tabela preenchida pelo processo de localização — NÃO editar à mão sem atualizar as demais.
 extension L10n {
     static let de: [String: String] = [
+        "Não foi possível restaurar o backup. As notas atuais foram preservadas.": "Das Backup konnte nicht wiederhergestellt werden. Ihre aktuellen Notizen wurden beibehalten.",
+        "A restauração exige revisão dos dados. Feche o app antes de editar notas. Os arquivos de recuperação estão em: %@": "Die Wiederherstellung erfordert eine Prüfung der Daten. Beenden Sie die App, bevor Sie Notizen bearbeiten. Wiederherstellungsdateien befinden sich hier: %@",
         "%d nota(s) restaurada(s).": "%d Notiz(en) wiederhergestellt.",
         "A nota fica 5 dias na Lixeira do The Styk, no menu da barra": "Die Notiz bleibt 5 Tage im The Styk-Papierkorb, im Menü in der Menüleiste",
         "A pasta original foi apagada": "Der ursprüngliche Ordner wurde gelöscht",
@@ -62,6 +64,7 @@ extension L10n {
         "Fazer backup agora…": "Jetzt Backup erstellen …",
         "Ferramentas da nota": "Notizwerkzeuge",
         "Guarda um backup automático local e mantém os últimos 7.": "Speichert ein automatisches lokales Backup und behält die letzten 7.",
+        "Com senha definida, o backup automático fica pausado. Faça backup manual e confirme sua senha.": "Wenn ein Passwort festgelegt ist, werden automatische Backups pausiert. Erstellen Sie ein manuelles Backup und bestätigen Sie Ihr Passwort.",
         "Idioma": "Sprache",
         "Iniciar o The Styk junto com o sistema": "The Styk beim Anmelden starten",
         "Laranja": "Orange",

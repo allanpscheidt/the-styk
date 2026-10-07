@@ -1,6 +1,6 @@
 # Política de Privacidade — The Styk
 
-**Última atualização: 6 de julho de 2026**
+**Última atualização: 7 de outubro de 2026**
 
 ## Resumo em uma linha
 
@@ -37,9 +37,11 @@ recebe absolutamente nada — nem dados, nem métricas, nem relatórios de erro.
 Nada sai do app sem uma ação sua. Ao usar "Exportar" (AirDrop, Mensagens, Mail…),
 o conteúdo da nota é enviado como texto puro para o destino **que você escolheu** —
 a partir daí, ele está fora do controle do app, como qualquer arquivo que você envia.
-Para o envio funcionar, o app grava uma cópia temporária da nota na pasta temporária
-do sistema — ela é apagada automaticamente minutos após o envio (e qualquer resquício,
-na próxima abertura do app).
+Para o envio funcionar, o app grava uma cópia da nota em um diretório temporário
+privado, acessível apenas à sua conta. Cancelar, concluir ou falhar no
+compartilhamento apaga essa cópia. Um prazo de 15 minutos cobre serviços que
+deixam de informar a conclusão. A próxima abertura remove todas as sobras
+próprias, independentemente da idade.
 
 ## Seus direitos (LGPD/GDPR)
 
@@ -52,6 +54,12 @@ Desinstalar o app não apaga essa pasta; remova-a manualmente se quiser eliminar
 todos os dados.
 
 ## Segurança
+
+A senha do aplicativo começa bloqueada a cada abertura. Bloqueio de tela,
+troca de usuário, suspensão e cinco minutos sem interação no The Styk encerram
+a sessão autenticada. Exportação, backup, restauração e operações de lixeira
+solicitam a senha novamente. O backup automático fica suspenso enquanto existe
+uma senha configurada. Os detalhes estão em [Segurança do The Styk](SECURITY.md).
 
 Os dados ficam em arquivos no seu Mac, protegidos pelas defesas do próprio sistema.
 Mensagens de diagnóstico do app (sem conteúdo de notas) ficam apenas no log local

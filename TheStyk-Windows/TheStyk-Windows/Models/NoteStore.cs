@@ -128,7 +128,6 @@ namespace TheStyk.Models
             string path = GetNotePath(id);
             if (!File.Exists(path))
             {
-                SystemIntegration.ExplorerObserver.Log($"[NoteStore] LoadNote falhou: Arquivo nao existe em '{path}'");
                 return null;
             }
 
@@ -137,14 +136,12 @@ namespace TheStyk.Models
                 var fileInfo = new FileInfo(path);
                 if (fileInfo.Length > MaxNoteBytes)
                 {
-                    SystemIntegration.ExplorerObserver.Log($"[NoteStore] LoadNote falhou: Tamanho do arquivo {fileInfo.Length} excede o limite {MaxNoteBytes}");
                     return null;
                 }
 
                 byte[] data = File.ReadAllBytes(path);
                 if (data.Length > MaxNoteBytes)
                 {
-                    SystemIntegration.ExplorerObserver.Log($"[NoteStore] LoadNote falhou: Tamanho dos bytes {data.Length} excede o limite {MaxNoteBytes}");
                     return null;
                 }
 
@@ -158,19 +155,16 @@ namespace TheStyk.Models
                 var note = JsonSerializer.Deserialize<Note>(span, _jsonOptions);
                 if (note == null)
                 {
-                    SystemIntegration.ExplorerObserver.Log($"[NoteStore] LoadNote falhou: Deserializacao JSON retornou null");
                     return null;
                 }
                 if (note.Id != id)
                 {
-                    SystemIntegration.ExplorerObserver.Log($"[NoteStore] LoadNote falhou: ID da nota ({note.Id}) nao bate com o ID buscado ({id})");
                     return null;
                 }
 
                 // Validações de guardrail
                 if (string.IsNullOrEmpty(note.Folder))
                 {
-                    SystemIntegration.ExplorerObserver.Log($"[NoteStore] LoadNote falhou: Folder da nota esta vazio ou nulo");
                     return null;
                 }
 
@@ -197,9 +191,9 @@ namespace TheStyk.Models
 
                 return note;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                SystemIntegration.ExplorerObserver.Log($"[NoteStore] Erro ao carregar nota {id}: {ex.Message}\n{ex.StackTrace}");
+                System.Diagnostics.Debug.WriteLine("The Styk: não foi possível carregar a nota.");
                 return null;
             }
         }
@@ -471,9 +465,9 @@ namespace TheStyk.Models
                 string json = JsonSerializer.Serialize(note, _jsonOptions);
                 WriteFileAtomic(path, json);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                SystemIntegration.ExplorerObserver.Log($"[NoteStore] Falha ao gravar nota {note.Id}: {ex.Message}\n{ex.StackTrace}");
+                System.Diagnostics.Debug.WriteLine("The Styk: não foi possível gravar a nota.");
             }
         }
 

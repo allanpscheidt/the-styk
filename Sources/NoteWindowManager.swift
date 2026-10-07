@@ -16,6 +16,10 @@ final class NoteWindowManager {
             name: NoteStore.indexDidChange,
             object: nil
         )
+        NotificationCenter.default.addObserver(self, selector: #selector(sessionWillLock),
+                                               name: PasswordService.willLockNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(sessionChanged),
+                                               name: PasswordService.lockStateDidChangeNotification, object: nil)
     }
 
     private var windowBounds: NSRect?
@@ -30,6 +34,7 @@ final class NoteWindowManager {
 
     /// Cola as notas abertas na janela do Finder (segue mover/redimensionar/trocar de monitor).
     private func applyAnchors() {
+        guard PasswordService.canAccessNotes else { return }
         guard let bounds = windowBounds else { return }
         let topLeft = NSPoint(x: bounds.minX, y: bounds.maxY)
         for controller in controllers.values {
@@ -75,7 +80,24 @@ final class NoteWindowManager {
         reconcile()
     }
 
+    @objc private func sessionWillLock() { flushAll() }
+
+    @objc private func sessionChanged() {
+        if PasswordService.isLocked {
+            for controller in controllers.values { controller.discardAndClose() }
+            controllers.removeAll()
+        } else {
+            NoteStore.shared.reconcileAnchors()
+            reconcile()
+        }
+    }
+
     private func reconcile() {
+        guard PasswordService.canAccessNotes else {
+            for controller in controllers.values { controller.discardAndClose() }
+            controllers.removeAll()
+            return
+        }
         let entries = visibleFolder.map { NoteStore.shared.entries(inFolder: $0) } ?? []
         let wanted = Set(entries.map { $0.id })
 
@@ -98,6 +120,7 @@ final class NoteWindowManager {
     }
 
     func showNoteForEditing(id: UUID) {
+        guard PasswordService.canAccessNotes else { return }
         guard let note = NoteStore.shared.loadNote(id: id) else { return }
         if controllers[id] == nil {
             let controller = NoteWindowController(note: note)

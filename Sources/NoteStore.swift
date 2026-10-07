@@ -4,8 +4,11 @@ final class NoteStore {
     static let shared = NoteStore()
     static let indexDidChange = Notification.Name("thestyk.indexDidChange")
 
-    private(set) var index: [IndexEntry]
-    private(set) var trash: [TrashEntry]
+    private var storedIndex: [IndexEntry]
+    private var storedTrash: [TrashEntry]
+
+    var index: [IndexEntry] { PasswordService.canAccessNotes ? storedIndex : [] }
+    var trash: [TrashEntry] { PasswordService.canAccessNotes ? storedTrash : [] }
 
     private let notesDir: URL
     private let trashDir: URL
@@ -15,6 +18,7 @@ final class NoteStore {
     private var folderBookmarks: [String: String]
     private var lastReconcile = Date.distantPast
     private var trashPurgeTimer: Timer?
+    private var sessionObserver: NSObjectProtocol?
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
 
@@ -49,10 +53,16 @@ final class NoteStore {
         } catch {
             NSLog("The Styk: falha ao criar diretorios de dados: %@", error.localizedDescription)
         }
-        let loaded = NoteStore.loadIndexFile(at: idx)
-        index = loaded.0
-        trash = loaded.1
-        folderBookmarks = NoteStore.loadBookmarks(at: bookmarksURL)
+        if PasswordService.canAccessNotes {
+            let loaded = NoteStore.loadIndexFile(at: idx)
+            storedIndex = loaded.0
+            storedTrash = loaded.1
+            folderBookmarks = NoteStore.loadBookmarks(at: bookmarksURL)
+        } else {
+            storedIndex = []
+            storedTrash = []
+            folderBookmarks = [:]
+        }
         purgeExpiredTrash()
         reconcileAnchors()
 
@@ -63,6 +73,20 @@ final class NoteStore {
         }
         RunLoop.main.add(timer, forMode: .common)
         trashPurgeTimer = timer
+        sessionObserver = NotificationCenter.default.addObserver(
+            forName: PasswordService.lockStateDidChangeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            if PasswordService.isLocked {
+                self.storedIndex = []
+                self.storedTrash = []
+                self.folderBookmarks = [:]
+            } else {
+                self.reloadFromDisk()
+                self.purgeExpiredTrash()
+                self.reconcileAnchors()
+            }
+        }
     }
 
     /// Raiz dos dados (~/Library/Application Support/The Styk) — usada pelo backup.
@@ -70,31 +94,37 @@ final class NoteStore {
 
     /// Relê o índice do disco (após restauração de backup) e notifica.
     func reloadFromDisk() {
+        guard PasswordService.canAccessNotes else { return }
         let loaded = NoteStore.loadIndexFile(at: indexURL)
-        index = loaded.0
-        trash = loaded.1
+        storedIndex = loaded.0
+        storedTrash = loaded.1
+        folderBookmarks = NoteStore.loadBookmarks(at: bookmarksURL)
         postIndexDidChange()
     }
 
     // MARK: - Consulta
 
     func entries(inFolder folder: String) -> [IndexEntry] {
+        guard PasswordService.canAccessNotes else { return [] }
         let f = normalizePath(folder)
-        return index.filter { $0.folder == f }
+        return storedIndex.filter { $0.folder == f }
     }
 
     func folders() -> [String] {
-        return Array(Set(index.filter { $0.orphaned != true }.map { $0.folder })).sorted()
+        guard PasswordService.canAccessNotes else { return [] }
+        return Array(Set(storedIndex.filter { $0.orphaned != true }.map { $0.folder })).sorted()
     }
 
     /// Notas cuja pasta original foi apagada — vivem na seção "Notas órfãs".
     func orphans() -> [IndexEntry] {
-        return index.filter { $0.orphaned == true }
+        guard PasswordService.canAccessNotes else { return [] }
+        return storedIndex.filter { $0.orphaned == true }
     }
 
     // MARK: - Lazy load da nota completa
 
     func loadNote(id: UUID) -> Note? {
+        guard PasswordService.canAccessNotes else { return nil }
         let url = noteURL(id)
         guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
               let size = attrs[.size] as? NSNumber, size.int64Value <= NoteStore.maxNoteBytes,
@@ -119,7 +149,8 @@ final class NoteStore {
 
     // MARK: - Mutação
 
-    func createNote(inFolder folder: String, frame: NoteFrame) -> Note {
+    func createNote(inFolder folder: String, frame: NoteFrame) -> Note? {
+        guard PasswordService.canAccessNotes else { return nil }
         let now = Date()
         let note = Note(id: UUID(),
                         folder: normalizePath(folder),
@@ -129,7 +160,7 @@ final class NoteStore {
                         created: now,
                         modified: now)
         writeNoteFile(note)
-        index.append(indexEntry(for: note))
+        storedIndex.append(indexEntry(for: note))
         bookmarkFolder(note.folder)   // para migrar junto se a pasta for movida
         writeIndex()
         postIndexDidChange()
@@ -137,6 +168,7 @@ final class NoteStore {
     }
 
     func save(_ note: Note) {
+        guard PasswordService.canAccessNotes else { return }
         var n = note
         n.modified = Date()
         n.folder = normalizePath(n.folder)
@@ -145,10 +177,10 @@ final class NoteStore {
         }
         writeNoteFile(n)
         let entry = indexEntry(for: n)
-        if let i = index.firstIndex(where: { $0.id == n.id }) {
-            index[i] = entry
+        if let i = storedIndex.firstIndex(where: { $0.id == n.id }) {
+            storedIndex[i] = entry
         } else {
-            index.append(entry)
+            storedIndex.append(entry)
         }
         writeIndex()
         postIndexDidChange()
@@ -157,15 +189,16 @@ final class NoteStore {
     // MARK: - Lixeira (recuperável por 5 dias)
 
     /// Move a nota para a Lixeira do app.
-    func moveToTrash(id: UUID) {
-        guard let i = index.firstIndex(where: { $0.id == id }) else { return }
-        let entry = index.remove(at: i)
+    func moveToTrash(id: UUID, authorization: PasswordService.Authorization? = nil) {
+        guard PasswordService.consumeAuthorization(authorization, for: .moveToTrash) else { return }
+        guard let i = storedIndex.firstIndex(where: { $0.id == id }) else { return }
+        let entry = storedIndex.remove(at: i)
         let fm = FileManager.default
         let dest = trashDir.appendingPathComponent(id.uuidString + ".json", isDirectory: false)
         try? fm.removeItem(at: dest)
         do {
             try fm.moveItem(at: noteURL(id), to: dest)
-            trash.append(TrashEntry(id: entry.id, folder: entry.folder,
+            storedTrash.append(TrashEntry(id: entry.id, folder: entry.folder,
                                     snippet: entry.snippet, color: entry.color, deletedAt: Date()))
         } catch {
             NSLog("The Styk: falha ao mover nota %@ para a lixeira: %@", id.uuidString, error.localizedDescription)
@@ -176,9 +209,10 @@ final class NoteStore {
     }
 
     /// Restaura da Lixeira; se a pasta original sumiu, volta como nota órfã.
-    func restoreFromTrash(id: UUID) {
-        guard let i = trash.firstIndex(where: { $0.id == id }) else { return }
-        let t = trash[i]
+    func restoreFromTrash(id: UUID, authorization: PasswordService.Authorization? = nil) {
+        guard PasswordService.consumeAuthorization(authorization, for: .restoreFromTrash) else { return }
+        guard let i = storedTrash.firstIndex(where: { $0.id == id }) else { return }
+        let t = storedTrash[i]
         let fm = FileManager.default
         do {
             try fm.moveItem(at: trashDir.appendingPathComponent(id.uuidString + ".json", isDirectory: false),
@@ -187,43 +221,46 @@ final class NoteStore {
             NSLog("The Styk: falha ao restaurar nota %@: %@", id.uuidString, error.localizedDescription)
             return
         }
-        trash.remove(at: i)
+        storedTrash.remove(at: i)
         var isDir: ObjCBool = false
         let folderExists = fm.fileExists(atPath: t.folder, isDirectory: &isDir) && isDir.boolValue
-        index.append(IndexEntry(id: t.id, folder: t.folder, snippet: t.snippet,
+        storedIndex.append(IndexEntry(id: t.id, folder: t.folder, snippet: t.snippet,
                                 color: t.color, modified: Date(),
                                 orphaned: folderExists ? nil : true))
         writeIndex()
         postIndexDidChange()
     }
 
-    func deletePermanently(id: UUID) {
-        trash.removeAll { $0.id == id }
+    func deletePermanently(id: UUID, authorization: PasswordService.Authorization? = nil) {
+        guard PasswordService.consumeAuthorization(authorization, for: .deletePermanently) else { return }
+        storedTrash.removeAll { $0.id == id }
         try? FileManager.default.removeItem(
             at: trashDir.appendingPathComponent(id.uuidString + ".json", isDirectory: false))
         writeIndex()
         postIndexDidChange()
     }
 
-    func emptyTrash() {
-        for t in trash {
+    func emptyTrash(authorization: PasswordService.Authorization? = nil) {
+        guard PasswordService.consumeAuthorization(authorization, for: .emptyTrash) else { return }
+        for t in storedTrash {
             try? FileManager.default.removeItem(
                 at: trashDir.appendingPathComponent(t.id.uuidString + ".json", isDirectory: false))
         }
-        trash = []
+        storedTrash = []
         writeIndex()
         postIndexDidChange()
     }
 
     private func purgeExpiredTrash() {
+        guard PasswordService.canAccessNotes else { return }
         let cutoff = Date(timeIntervalSinceNow: -NoteStore.trashRetention)
-        let expired = trash.filter { $0.deletedAt < cutoff }
+        let expired = storedTrash.filter { $0.deletedAt < cutoff }
         guard !expired.isEmpty else { return }
         for t in expired {
             try? FileManager.default.removeItem(
                 at: trashDir.appendingPathComponent(t.id.uuidString + ".json", isDirectory: false))
         }
-        trash.removeAll { $0.deletedAt < cutoff }
+        storedTrash.removeAll { $0.deletedAt < cutoff }
         writeIndex()
         postIndexDidChange()
     }
@@ -232,15 +269,16 @@ final class NoteStore {
 
     /// Reanexa uma nota (órfã ou não) a outra pasta.
     func reattach(id: UUID, toFolder folder: String) {
+        guard PasswordService.canAccessNotes else { return }
         guard var note = loadNote(id: id) else { return }
         let f = normalizePath(folder)
         note.folder = f
         note.modified = Date()
         writeNoteFile(note)
-        if let i = index.firstIndex(where: { $0.id == id }) {
-            index[i].folder = f
-            index[i].orphaned = nil
-            index[i].modified = note.modified
+        if let i = storedIndex.firstIndex(where: { $0.id == id }) {
+            storedIndex[i].folder = f
+            storedIndex[i].orphaned = nil
+            storedIndex[i].modified = note.modified
         }
         bookmarkFolder(f)
         writeIndex()
@@ -249,23 +287,25 @@ final class NoteStore {
 
     /// Versão com throttle (máx. 1×/30 s) para chamar a cada troca de pasta no Finder.
     func reconcileAnchorsIfStale() {
+        guard PasswordService.canAccessNotes else { return }
         guard Date().timeIntervalSince(lastReconcile) > 30 else { return }
         reconcileAnchors()
     }
 
     func reconcileAnchors() {
+        guard PasswordService.canAccessNotes else { return }
         lastReconcile = Date()
         let fm = FileManager.default
         var changed = false
 
-        for folder in Set(index.map { $0.folder }) {
+        for folder in Set(storedIndex.map { $0.folder }) {
             var isDir: ObjCBool = false
             let exists = fm.fileExists(atPath: folder, isDirectory: &isDir) && isDir.boolValue
-            let isOrphan = index.first(where: { $0.folder == folder })?.orphaned == true
+            let isOrphan = storedIndex.first(where: { $0.folder == folder })?.orphaned == true
 
             if exists {
                 if isOrphan {   // pasta voltou a existir → deixa de ser órfã
-                    for i in index.indices where index[i].folder == folder { index[i].orphaned = nil }
+                    for i in storedIndex.indices where storedIndex[i].folder == folder { storedIndex[i].orphaned = nil }
                     changed = true
                 }
                 bookmarkFolder(folder)
@@ -289,10 +329,10 @@ final class NoteStore {
             }
 
             if let newPath = newPath {
-                for i in index.indices where index[i].folder == folder {
-                    index[i].folder = newPath
-                    index[i].orphaned = nil
-                    if var note = loadNote(id: index[i].id) {
+                for i in storedIndex.indices where storedIndex[i].folder == folder {
+                    storedIndex[i].folder = newPath
+                    storedIndex[i].orphaned = nil
+                    if var note = loadNote(id: storedIndex[i].id) {
                         note.folder = newPath
                         writeNoteFile(note)
                     }
@@ -302,9 +342,9 @@ final class NoteStore {
                 changed = true
                 // Sem caminhos no log unificado (dado potencialmente pessoal) — só a contagem.
                 NSLog("The Styk: pasta ancorada migrada (%d nota(s))",
-                      index.filter { $0.folder == newPath }.count)
+                      storedIndex.filter { $0.folder == newPath }.count)
             } else if !isOrphan {
-                for i in index.indices where index[i].folder == folder { index[i].orphaned = true }
+                for i in storedIndex.indices where storedIndex[i].folder == folder { storedIndex[i].orphaned = true }
                 changed = true
             }
         }
@@ -410,7 +450,7 @@ final class NoteStore {
 
     private func writeIndex() {
         do {
-            let data = try encoder.encode(IndexFileOut(version: 1, notes: index, trash: trash))
+            let data = try encoder.encode(IndexFileOut(version: 1, notes: storedIndex, trash: storedTrash))
             try data.write(to: indexURL, options: .atomic)
         } catch {
             NSLog("The Styk: falha ao gravar index.json: %@", error.localizedDescription)

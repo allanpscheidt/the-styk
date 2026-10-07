@@ -25,16 +25,11 @@ namespace TheStyk.SystemIntegration
             _currentFolder = folder;
             _currentBounds = bounds;
 
-            ExplorerObserver.Log($"[WindowManager] SetVisibleFolder: folder='{folder ?? "null"}', hasBounds={bounds.HasValue}");
 
             if (string.IsNullOrEmpty(folder) || !bounds.HasValue)
             {
                 // Nenhuma pasta ativa no Explorer: fecha todos os painéis visíveis
                 var openIds = _openWindows.Keys.ToList();
-                if (openIds.Count > 0)
-                {
-                    ExplorerObserver.Log($"[WindowManager] Nenhuma pasta ativa. Fechando {openIds.Count} notas abertas.");
-                }
                 foreach (var id in openIds)
                 {
                     if (_openWindows.TryGetValue(id, out var win))
@@ -55,10 +50,6 @@ namespace TheStyk.SystemIntegration
                 return note == null || !string.Equals(note.Folder, folder, StringComparison.OrdinalIgnoreCase);
             }).Select(kvp => kvp.Key).ToList();
 
-            if (toClose.Count > 0)
-            {
-                ExplorerObserver.Log($"[WindowManager] Fechando {toClose.Count} notas de outras pastas.");
-            }
             foreach (var id in toClose)
             {
                 if (_openWindows.TryGetValue(id, out var win))
@@ -71,21 +62,14 @@ namespace TheStyk.SystemIntegration
 
             // 2. Cria e abre notas da pasta ativa que ainda não estejam abertas
             var entriesInFolder = NoteStore.Shared.Entries(folder);
-            ExplorerObserver.Log($"[WindowManager] Encontrou {entriesInFolder.Count} notas no index para '{folder}'");
             foreach (var entry in entriesInFolder)
             {
                 if (!_openWindows.ContainsKey(entry.Id))
                 {
-                    ExplorerObserver.Log($"[WindowManager] Carregando nota {entry.Id} para '{folder}'...");
                     var note = NoteStore.Shared.LoadNote(entry.Id);
                     if (note != null)
                     {
-                        ExplorerObserver.Log($"[WindowManager] Nota {entry.Id} carregada do disco. Criando janela...");
                         CreateAndShowNoteWindow(note);
-                    }
-                    else
-                    {
-                        ExplorerObserver.Log($"[WindowManager] Falha ao carregar nota {entry.Id} do disco!");
                     }
                 }
             }
@@ -159,19 +143,15 @@ namespace TheStyk.SystemIntegration
 
         private void CreateAndShowNoteWindow(Note note)
         {
-            ExplorerObserver.Log($"[WindowManager] Instanciando NoteWindow para nota {note.Id}...");
             var win = new UI.NoteWindow(note);
             win.Closed += (s, e) =>
             {
-                ExplorerObserver.Log($"[WindowManager] NoteWindow fechada para nota {note.Id}");
                 _openWindows.Remove(note.Id);
             };
 
             _openWindows[note.Id] = win;
             
-            ExplorerObserver.Log($"[WindowManager] Chamando win.Show() para nota {note.Id}...");
             win.Show();
-            ExplorerObserver.Log($"[WindowManager] win.Show() concluida para nota {note.Id}");
         }
     }
 }

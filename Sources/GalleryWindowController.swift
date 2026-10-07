@@ -39,6 +39,8 @@ final class GalleryWindowController: NSWindowController, NSWindowDelegate {
             name: NoteStore.indexDidChange,
             object: nil
         )
+        NotificationCenter.default.addObserver(self, selector: #selector(sessionChanged),
+                                               name: PasswordService.lockStateDidChangeNotification, object: nil)
         
         NotificationCenter.default.addObserver(
             self,
@@ -51,6 +53,7 @@ final class GalleryWindowController: NSWindowController, NSWindowDelegate {
     required init?(coder: NSCoder) { fatalError("não usado") }
     
     func show() {
+        guard PasswordService.authenticateForAccess() else { return }
         refresh()
         NSApp.activate(ignoringOtherApps: true)
         if window?.isVisible != true { window?.center() }
@@ -60,6 +63,17 @@ final class GalleryWindowController: NSWindowController, NSWindowDelegate {
     
     @objc private func notesChanged() {
         refresh()
+    }
+
+    @objc private func sessionChanged() {
+        if PasswordService.isLocked {
+            gridView.cards = []
+            searchField.stringValue = ""
+            currentFilter = ""
+            window?.orderOut(nil)
+        } else if window?.isVisible == true {
+            refresh()
+        }
     }
     
     @objc private func languageChanged() {
@@ -223,6 +237,11 @@ final class GalleryWindowController: NSWindowController, NSWindowDelegate {
     }
     
     private func refresh() {
+        guard PasswordService.canAccessNotes else {
+            gridView.cards = []
+            window?.orderOut(nil)
+            return
+        }
         let allEntries = NoteStore.shared.index
         var filtered = allEntries
         
@@ -248,8 +267,8 @@ final class GalleryWindowController: NSWindowController, NSWindowDelegate {
                 NoteWindowManager.shared.showNoteForEditing(id: entry.id)
             }
             card.onOpenFolder = {
-                let url = URL(fileURLWithPath: entry.folder, isDirectory: true).resolvingSymlinksInPath()
-                NSWorkspace.shared.open(url)
+                guard PasswordService.canAccessNotes else { return }
+                SafeFolderAccess.open(entry.folder)
             }
             card.isListMode = currentViewMode == .list
             return card

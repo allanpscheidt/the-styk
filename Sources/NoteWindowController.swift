@@ -105,6 +105,20 @@ final class NoteWindowController: NSWindowController, NSWindowDelegate, NSTextVi
         super.close()
     }
 
+    /// Drop plaintext, undo history and pending edits when the session closes.
+    func discardAndClose() {
+        textSaveTimer?.invalidate()
+        frameSaveTimer?.invalidate()
+        textDirty = false
+        frameDirty = false
+        textView.undoManager?.removeAllActions()
+        textView.string = ""
+        textView.isEditable = false
+        note.text = ""
+        window?.title = L("Desbloquear Notas")
+        super.close()
+    }
+
     // MARK: - Painel
 
     private func configure(_ panel: NSPanel) {
@@ -587,16 +601,18 @@ final class NoteWindowController: NSWindowController, NSWindowDelegate, NSTextVi
         guard !PasswordService.isLocked else { return }
         flushPendingSave()
         syncFromUI()
-        ExportService.share(note: note, relativeTo: sender)
+        let authorization = PasswordService.requestAuthorization(for: .export, reason: L("Exportar nota"))
+        ExportService.share(note: note, relativeTo: sender, authorization: authorization)
     }
 
     @objc private func deleteTapped() {
         guard !PasswordService.isLocked else { return }
-        // Sem alerta: a ação é recuperável — a nota fica 5 dias na Lixeira do app.
+        let authorization = PasswordService.requestAuthorization(for: .moveToTrash, reason: L("Mover para a Lixeira"))
+        guard !PasswordService.hasPassword || authorization != nil else { return }
         deleted = true
         textSaveTimer?.invalidate()
         frameSaveTimer?.invalidate()
-        NoteStore.shared.moveToTrash(id: noteID)
+        NoteStore.shared.moveToTrash(id: noteID, authorization: authorization)
     }
 
     // MARK: - Persistência
@@ -612,7 +628,7 @@ final class NoteWindowController: NSWindowController, NSWindowDelegate, NSTextVi
     }
 
     private func saveNow() {
-        guard !deleted else { return }
+        guard !deleted, PasswordService.canAccessNotes else { return }
         textSaveTimer?.invalidate()
         frameSaveTimer?.invalidate()
         syncFromUI()
@@ -623,8 +639,8 @@ final class NoteWindowController: NSWindowController, NSWindowDelegate, NSTextVi
 
     @objc private func lockStateChanged() {
         if PasswordService.isLocked {
-            textView.string = L("nota bloqueada, desbloqueie no menu bar")
-            textView.isEditable = false
+            discardAndClose()
+            return
         } else {
             textView.string = note.text
             textView.isEditable = true
@@ -635,6 +651,8 @@ final class NoteWindowController: NSWindowController, NSWindowDelegate, NSTextVi
     }
 
     func textDidChange(_ notification: Notification) {
+        guard PasswordService.canAccessNotes else { return }
+        PasswordService.recordActivity()
         updateAccessibilityTitle()
         textDirty = true
         textSaveTimer?.invalidate()
@@ -661,6 +679,7 @@ final class NoteWindowController: NSWindowController, NSWindowDelegate, NSTextVi
     /// superior-esquerdo da janela do Finder. Primeiro show sem âncora: adota a
     /// posição atual como âncora.
     func updateAnchoredPosition(windowTopLeft: NSPoint) {
+        guard PasswordService.canAccessNotes else { return }
         lastWindowTopLeft = windowTopLeft
         guard let window = window else { return }
         guard let anchor = note.anchor else {
@@ -697,6 +716,7 @@ final class NoteWindowController: NSWindowController, NSWindowDelegate, NSTextVi
     }
 
     private func scheduleFrameSave() {
+        guard PasswordService.canAccessNotes else { return }
         frameDirty = true
         frameSaveTimer?.invalidate()
         frameSaveTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in

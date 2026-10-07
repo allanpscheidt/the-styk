@@ -73,18 +73,6 @@ namespace TheStyk.SystemIntegration
             Poll();
         }
 
-        public static void Log(string message)
-        {
-            try
-            {
-                string logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "The Styk");
-                Directory.CreateDirectory(logDir);
-                string logPath = Path.Combine(logDir, "debug.log");
-                File.AppendAllText(logPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}\r\n");
-            }
-            catch {}
-        }
-
         private void Poll()
         {
             IntPtr foregroundHwnd = GetForegroundWindow();
@@ -113,7 +101,6 @@ namespace TheStyk.SystemIntegration
             }
 
             bool isExplorer = className == "CabinetWClass" || className == "ExploreWClass";
-            Log($"Foreground Window: HWND={foregroundHwnd.ToInt64()}, Class={className}, PID={processId}, isExplorer={isExplorer}");
 
             if (!isExplorer)
             {
@@ -123,7 +110,6 @@ namespace TheStyk.SystemIntegration
 
             // É uma janela do Explorer! Captura caminho e limites (bounds)
             string? path = GetExplorerPath(foregroundHwnd);
-            Log($"GetExplorerPath returned: '{path ?? "null"}'");
             
             if (string.IsNullOrEmpty(path))
             {
@@ -172,7 +158,6 @@ namespace TheStyk.SystemIntegration
                 Type? shellWindowsType = Type.GetTypeFromProgID("Shell.Application");
                 if (shellWindowsType == null)
                 {
-                    Log("Erro: Nao foi possivel obter o ProgID Shell.Application");
                     return null;
                 }
 
@@ -180,7 +165,6 @@ namespace TheStyk.SystemIntegration
                 dynamic windows = shellApplication.Windows(); // Coleção de janelas abertas
 
                 int count = windows.Count;
-                Log($"Total de janelas COM abertas (ShellWindows): {count}");
 
                 for (int i = 0; i < count; i++)
                 {
@@ -192,7 +176,6 @@ namespace TheStyk.SystemIntegration
                             long windowHwnd = Convert.ToInt64(window.HWND);
                             IntPtr topLevelHwnd = GetAncestor((IntPtr)windowHwnd, 2); // 2 = GA_ROOT (Pega a janela principal)
                             
-                            Log($"Janela COM index={i}: HWND={windowHwnd}, RootAncestor={topLevelHwnd.ToInt64()}, Target={hwnd.ToInt64()}");
 
                             if (topLevelHwnd == hwnd || windowHwnd == hwnd.ToInt64())
                             {
@@ -204,33 +187,22 @@ namespace TheStyk.SystemIntegration
                                     if (folder != null)
                                     {
                                         string folderPath = folder.Self.Path;
-                                        Log($"Caminho detectado na janela COM index={i}: {folderPath}");
                                         if (!string.IsNullOrEmpty(folderPath) && Path.IsPathRooted(folderPath))
                                         {
                                             return Models.NoteStore.NormalizePath(folderPath);
                                         }
                                     }
-                                    else
-                                    {
-                                        Log($"Janela COM index={i} nao possui Folder no Document");
-                                    }
-                                }
-                                else
-                                {
-                                    Log($"Janela COM index={i} nao possui Document");
                                 }
                             }
                         }
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        Log($"Erro ao processar janela COM no index {i}: {ex.Message}");
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Log($"Erro geral ao consultar COM do Explorer: {ex.Message}\n{ex.StackTrace}");
             }
             return null;
         }
