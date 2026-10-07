@@ -39,7 +39,6 @@ namespace TheStyk.UI
             _note = note;
             _noteId = note.Id;
 
-            ExplorerObserver.Log($"[NoteWindow] Construtor iniciado para nota {_noteId}");
 
             // Clampa a posição inicial para estar visível na tela virtual
             double screenWidth = SystemParameters.VirtualScreenWidth;
@@ -62,7 +61,6 @@ namespace TheStyk.UI
             Width = Math.Clamp(_note.Frame.W, MinWidth, 4000);
             Height = Math.Clamp(_note.Frame.H, MinHeight, 4000);
 
-            ExplorerObserver.Log($"[NoteWindow] Construtor finalizado para nota {_noteId}. Left={Left}, Top={Top}, Width={Width}, Height={Height}");
 
             // Timer de salvamento de texto: debounce de 1.5s
             _saveTextTimer = new DispatcherTimer
@@ -94,11 +92,9 @@ namespace TheStyk.UI
 
         private void NoteWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            ExplorerObserver.Log($"[NoteWindow] Evento Loaded disparado para nota {_noteId}");
             ApplyStyle();
             NoteTextBox.Text = _note.Text;
             _isLoaded = true;
-            ExplorerObserver.Log($"[NoteWindow] Evento Loaded concluido para nota {_noteId}");
         }
 
         private void ApplyStyle()
@@ -118,20 +114,17 @@ namespace TheStyk.UI
         {
             _isPositioningFromExplorer = true;
 
-            ExplorerObserver.Log($"[NoteWindow] UpdatePositionFromExplorer para nota {_noteId}: Explorer={explorerBounds.Left},{explorerBounds.Top} ({explorerBounds.Width}x{explorerBounds.Height}), Left={Left}, Top={Top}");
 
             // Se for a primeira ancoragem ou o usuário acabou de abrir a pasta, calcula
             if (_anchorDx == 0 && _anchorDy == 0)
             {
                 RecalculateAnchors(explorerBounds);
-                ExplorerObserver.Log($"[NoteWindow] RecalculateAnchors executado para nota {_noteId}: _anchorDx={_anchorDx}, _anchorDy={_anchorDy}");
             }
 
             // Reposiciona a nota mantendo a distância relativa (âncora) do canto superior esquerdo do Explorer
             Left = explorerBounds.Left + _anchorDx;
             Top = explorerBounds.Top + _anchorDy;
 
-            ExplorerObserver.Log($"[NoteWindow] Nota {_noteId} reposicionada para Left={Left}, Top={Top}");
 
             _isPositioningFromExplorer = false;
         }

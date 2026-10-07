@@ -3,6 +3,8 @@ import Foundation
 // Tabela preenchida pelo processo de localização — NÃO editar à mão sem atualizar as demais.
 extension L10n {
     static let zhHans: [String: String] = [
+        "Não foi possível restaurar o backup. As notas atuais foram preservadas.": "无法恢复备份。您当前的便笺已保留。",
+        "A restauração exige revisão dos dados. Feche o app antes de editar notas. Os arquivos de recuperação estão em: %@": "恢复操作需要检查数据。编辑便笺前请退出应用。恢复文件位于：%@",
         "%d nota(s) restaurada(s).": "已恢复 %d 张便笺。",
         "A nota fica 5 dias na Lixeira do The Styk, no menu da barra": "便笺会在菜单栏中 The Styk 的废纸篓里保留 5 天",
         "A pasta original foi apagada": "原文件夹已被删除",
@@ -62,6 +64,7 @@ extension L10n {
         "Fazer backup agora…": "立即备份…",
         "Ferramentas da nota": "便笺工具",
         "Guarda um backup automático local e mantém os últimos 7.": "自动存储本地备份，并保留最近 7 份。",
+        "Com senha definida, o backup automático fica pausado. Faça backup manual e confirme sua senha.": "设置密码后，自动备份会暂停。请手动备份并确认您的密码。",
         "Idioma": "语言",
         "Iniciar o The Styk junto com o sistema": "随系统一同启动 The Styk",
         "Laranja": "橙色",

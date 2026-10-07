@@ -3,6 +3,8 @@ import Foundation
 // Tabela preenchida pelo processo de localização — NÃO editar à mão sem atualizar as demais.
 extension L10n {
     static let en: [String: String] = [
+        "Não foi possível restaurar o backup. As notas atuais foram preservadas.": "The backup could not be restored. Your current notes were preserved.",
+        "A restauração exige revisão dos dados. Feche o app antes de editar notas. Os arquivos de recuperação estão em: %@": "The restore requires a data review. Quit the app before editing notes. Recovery files are at: %@",
         "%d nota(s) restaurada(s).": "%d note(s) restored.",
         "A nota fica 5 dias na Lixeira do The Styk, no menu da barra": "The note stays in The Styk's Trash for 5 days, in the menu bar",
         "A pasta original foi apagada": "The original folder was deleted",
@@ -62,6 +64,7 @@ extension L10n {
         "Fazer backup agora…": "Back Up Now…",
         "Ferramentas da nota": "Note tools",
         "Guarda um backup automático local e mantém os últimos 7.": "Stores an automatic local backup and keeps the last 7.",
+        "Com senha definida, o backup automático fica pausado. Faça backup manual e confirme sua senha.": "When a password is set, automatic backup is paused. Make a manual backup and confirm your password.",
         "Idioma": "Language",
         "Iniciar o The Styk junto com o sistema": "Start The Styk at login",
         "Laranja": "Orange",

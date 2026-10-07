@@ -98,17 +98,28 @@ final class PreferencesWindowController: NSWindowController {
         NSWorkspace.shared.notificationCenter.addObserver(
             self, selector: #selector(displayOptionsChanged),
             name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(sessionChanged),
+                                               name: PasswordService.lockStateDidChangeNotification, object: nil)
     }
 
     required init?(coder: NSCoder) { fatalError("não usado") }
 
     func show(finder: FinderObserver) {
+        guard PasswordService.authenticateForAccess() else { return }
         self.finder = finder
         refresh()
         NSApp.activate(ignoringOtherApps: true)
         if window?.isVisible != true { window?.center() }
         showWindow(nil)
         window?.makeKeyAndOrderFront(nil)
+    }
+
+    @objc private func sessionChanged() {
+        if PasswordService.isLocked {
+            if let sheet = window?.attachedSheet { window?.endSheet(sheet, returnCode: .cancel) }
+            window?.endEditing(for: nil)
+            window?.orderOut(nil)
+        } else { refresh() }
     }
 
     // MARK: - UI
@@ -230,6 +241,7 @@ final class PreferencesWindowController: NSWindowController {
                 autoBackupCheckbox,
                 frequencyRow,
                 footnote(L("Guarda um backup automático local e mantém os últimos 7.")),
+                footnote(L("Com senha definida, o backup automático fica pausado. Faça backup manual e confirme sua senha.")),
                 buttonRow,
                 footnote(L("O backup é um .zip com todas as notas em texto (JSON).")),
             ]),
@@ -407,6 +419,7 @@ final class PreferencesWindowController: NSWindowController {
     }
 
     @objc private func toggleAutoBackup() {
+        guard PasswordService.canAccessNotes else { return }
         UserDefaults.standard.set(autoBackupCheckbox.state == .on, forKey: BackupService.autoKey)
         if autoBackupCheckbox.state == .on {
             BackupService.startPeriodicTimer()
@@ -417,6 +430,7 @@ final class PreferencesWindowController: NSWindowController {
     }
 
     @objc private func frequencySettingsChanged() {
+        guard PasswordService.canAccessNotes else { return }
         let val = frequencyField.integerValue
         let savedVal = val > 0 ? val : 1
         UserDefaults.standard.set(savedVal, forKey: BackupService.valueKey)
@@ -430,7 +444,7 @@ final class PreferencesWindowController: NSWindowController {
     }
 
     @objc private func backupNow(_ sender: Any?) {
-        guard let window = window else { return }
+        guard PasswordService.canAccessNotes, let window = window else { return }
         let panel = NSSavePanel()
         panel.allowedFileTypes = ["zip"]
         let df = DateFormatter()
@@ -438,8 +452,12 @@ final class PreferencesWindowController: NSWindowController {
         panel.nameFieldStringValue = "TheStyk-backup-\(df.string(from: Date())).zip"
         panel.beginSheetModal(for: window) { response in
             guard response == .OK, let dest = panel.url else { return }
+            guard PasswordService.canAccessNotes else { return }
+            NoteWindowManager.shared.flushAll()
+            let authorization = PasswordService.requestAuthorization(for: .backup, reason: L("Fazer backup agora…"))
+            guard !PasswordService.hasPassword || authorization != nil else { return }
             DispatchQueue.global(qos: .userInitiated).async {
-                let ok = BackupService.makeBackup(to: dest)
+                let ok = BackupService.makeBackup(to: dest, authorization: authorization)
                 DispatchQueue.main.async {
                     self.info(ok ? L("Backup salvo.")
                                  : L("Não foi possível criar o backup — crie ao menos uma nota primeiro."))
@@ -449,13 +467,14 @@ final class PreferencesWindowController: NSWindowController {
     }
 
     @objc private func restoreBackup(_ sender: Any?) {
-        guard let window = window else { return }
+        guard PasswordService.canAccessNotes, let window = window else { return }
         let panel = NSOpenPanel()
         panel.allowedFileTypes = ["zip"]
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
         panel.beginSheetModal(for: window) { response in
             guard response == .OK, let zip = panel.url else { return }
+            guard PasswordService.canAccessNotes else { return }
             let alert = NSAlert()
             alert.alertStyle = .warning
             alert.messageText = L("Restaurar este backup?")
@@ -463,14 +482,20 @@ final class PreferencesWindowController: NSWindowController {
             alert.addButton(withTitle: L("Restaurar"))
             alert.addButton(withTitle: L("Cancelar"))
             guard alert.runModal() == .alertFirstButtonReturn else { return }
+            let authorization = PasswordService.requestAuthorization(for: .restore, reason: L("Restaurar este backup?"))
+            guard !PasswordService.hasPassword || authorization != nil else { return }
 
-            NoteWindowManager.shared.prepareForRestore()   // fecha painéis (com flush) ANTES de trocar os dados
             DispatchQueue.global(qos: .userInitiated).async {
-                let count = BackupService.restore(from: zip)
+                let result = BackupService.restore(from: zip, authorization: authorization)
                 DispatchQueue.main.async {
-                    NoteStore.shared.reloadFromDisk()
-                    self.info(count >= 0 ? String(format: L("%d nota(s) restaurada(s)."), count)
-                                         : L("Arquivo de backup inválido — nada foi alterado."))
+                    switch result {
+                    case .restored(let count):
+                        self.info(String(format: L("%d nota(s) restaurada(s)."), count))
+                    case .unchanged:
+                        self.info(L("Não foi possível restaurar o backup. As notas atuais foram preservadas."))
+                    case .recoveryRequired(let directory):
+                        self.info(String(format: L("A restauração exige revisão dos dados. Feche o app antes de editar notas. Os arquivos de recuperação estão em: %@"), directory.path))
+                    }
                 }
             }
         }

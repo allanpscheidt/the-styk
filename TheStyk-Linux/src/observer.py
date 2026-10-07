@@ -87,10 +87,8 @@ class FileExplorerObserver:
         return uris
 
     def _on_dbus_properties_changed(self, connection, sender, object_path, interface, signal, parameters, user_data):
-        # Debug print to see what signals we are receiving
         try:
             unpacked = parameters.unpack()
-            print(f"[Observer] D-Bus signal received! Path: {object_path}, Interface: {interface}, Params: {unpacked}")
         except Exception as e:
             print(f"[Observer] D-Bus unpack failed: {e}")
             return
@@ -120,7 +118,6 @@ class FileExplorerObserver:
                         if parsed_path:
                             self._nautilus_last_paths[object_path] = parsed_path
                             self._last_nautilus_path = parsed_path
-                            print(f"[Observer] DBus detected folder change: {parsed_path}")
         except Exception as e:
             print(f"[Observer] DBus parsing exception: {e}")
             pass
@@ -140,9 +137,14 @@ class FileExplorerObserver:
         Queries X11 active window using xprop and xwininfo.
         Returns: (window_id, window_class, window_title, bounds_rect)
         """
+        # XWayland's active-window property cannot prove the native Wayland
+        # foreground owner. Keep notes hidden until a compositor integration
+        # can provide that evidence.
+        if os.environ.get("XDG_SESSION_TYPE", "").lower() == "wayland" or os.environ.get("WAYLAND_DISPLAY"):
+            return None, None, None, None
         try:
             # Get active window ID
-            out = subprocess.check_output(["xprop", "-root", "_NET_ACTIVE_WINDOW"], stderr=subprocess.DEVNULL)
+            out = subprocess.check_output(["xprop", "-root", "_NET_ACTIVE_WINDOW"], stderr=subprocess.DEVNULL, timeout=0.5)
             match = re.search(r"_NET_ACTIVE_WINDOW\(WINDOW\): window id # (0x[0-9a-fA-F]+)", out.decode("utf-8"))
             if not match:
                 return None, None, None, None
@@ -150,21 +152,21 @@ class FileExplorerObserver:
             win_id = match.group(1)
             
             # Get window class
-            class_out = subprocess.check_output(["xprop", "-id", win_id, "WM_CLASS"], stderr=subprocess.DEVNULL)
+            class_out = subprocess.check_output(["xprop", "-id", win_id, "WM_CLASS"], stderr=subprocess.DEVNULL, timeout=0.5)
             class_match = re.search(r'WM_CLASS\(STRING\) = "([^"]+)", "([^"]+)"', class_out.decode("utf-8"))
             win_class = class_match.group(2) if class_match else ""
             
             # Get window title
-            title_out = subprocess.check_output(["xprop", "-id", win_id, "_NET_WM_NAME"], stderr=subprocess.DEVNULL)
+            title_out = subprocess.check_output(["xprop", "-id", win_id, "_NET_WM_NAME"], stderr=subprocess.DEVNULL, timeout=0.5)
             title_match = re.search(r'_NET_WM_NAME\(UTF8_STRING\) = "([^"]+)"', title_out.decode("utf-8"))
             if not title_match:
-                title_out = subprocess.check_output(["xprop", "-id", win_id, "WM_NAME"], stderr=subprocess.DEVNULL)
+                title_out = subprocess.check_output(["xprop", "-id", win_id, "WM_NAME"], stderr=subprocess.DEVNULL, timeout=0.5)
                 title_match = re.search(r'WM_NAME\(STRING\) = "([^"]+)"', title_out.decode("utf-8"))
             
             win_title = title_match.group(1) if title_match else ""
             
             # Get window geometry/bounds
-            wininfo = subprocess.check_output(["xwininfo", "-id", win_id], stderr=subprocess.DEVNULL).decode("utf-8")
+            wininfo = subprocess.check_output(["xwininfo", "-id", win_id], stderr=subprocess.DEVNULL, timeout=0.5).decode("utf-8")
             
             x_match = re.search(r"Absolute upper-left X:\s+(-?\d+)", wininfo)
             y_match = re.search(r"Absolute upper-left Y:\s+(-?\d+)", wininfo)
@@ -193,19 +195,11 @@ class FileExplorerObserver:
             return True
 
         if not win_class:
-            # We are likely on Wayland or tools like xprop are missing.
-            # We fall back to the last navigated Nautilus path from DBus.
-            if self._last_nautilus_path:
-                folder_path = self._last_nautilus_path.replace("\\", "/")
-                if folder_path.endswith("/") and len(folder_path) > 1:
-                    folder_path = folder_path.rstrip("/")
-                
-                if folder_path != self._current_folder:
-                    self._current_folder = folder_path
-                    self._current_bounds = None
-                    self._notify_change()
-            else:
-                self._clear_folder_state()
+            # A navigation signal proves a folder exists, not that its window
+            # remains foreground. Discard it on any loss of focus evidence.
+            self._last_nautilus_path = None
+            self._nautilus_last_paths.clear()
+            self._clear_folder_state()
             return True
 
         # Check if the active window is a known file manager

@@ -3,6 +3,8 @@ import Foundation
 // Tabela preenchida pelo processo de localização — NÃO editar à mão sem atualizar as demais.
 extension L10n {
     static let ja: [String: String] = [
+        "Não foi possível restaurar o backup. As notas atuais foram preservadas.": "バックアップを復元できませんでした。現在のメモは保持されています。",
+        "A restauração exige revisão dos dados. Feche o app antes de editar notas. Os arquivos de recuperação estão em: %@": "復元データの確認が必要です。メモを編集する前にアプリを終了してください。復旧用ファイルの場所：%@",
         "%d nota(s) restaurada(s).": "%d件のメモを復元しました。",
         "A nota fica 5 dias na Lixeira do The Styk, no menu da barra": "メモはメニューバーのThe Stykのゴミ箱に5日間残ります",
         "A pasta original foi apagada": "元のフォルダは削除されました",
@@ -62,6 +64,7 @@ extension L10n {
         "Fazer backup agora…": "今すぐバックアップを作成…",
         "Ferramentas da nota": "メモのツール",
         "Guarda um backup automático local e mantém os últimos 7.": "ローカル自動バックアップを保存し、最新の7件を保持します。",
+        "Com senha definida, o backup automático fica pausado. Faça backup manual e confirme sua senha.": "パスワードを設定すると、自動バックアップは一時停止します。手動でバックアップを作成し、パスワードを確認してください。",
         "Idioma": "言語",
         "Iniciar o The Styk junto com o sistema": "ログイン時にThe Stykを起動",
         "Laranja": "オレンジ",

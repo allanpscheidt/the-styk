@@ -1,10 +1,15 @@
 import os
 import json
 import uuid
-import shutil
+import stat
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Callable
 from models import Note, NoteStyle, NoteFrame, IndexEntry, TrashEntry, NoteColor, NoteFontID, parse_iso_datetime, format_iso_datetime
+
+
+class UnsafeStorePathError(PermissionError):
+    """The store contains a link, special file, or another account's object."""
+
 
 class NoteStore:
     _instance: Optional["NoteStore"] = None
@@ -27,7 +32,7 @@ class NoteStore:
         # Custom env data dir (for tests)
         env_dir = os.environ.get("THESTYK_DATA_DIR")
         if env_dir:
-            self._data_dir = env_dir
+            self._data_dir = os.path.abspath(env_dir)
         else:
             self._data_dir = os.path.join(os.path.expanduser("~"), ".config", "the-styk")
 
@@ -35,9 +40,18 @@ class NoteStore:
         self._trash_dir = os.path.join(self._data_dir, "trash")
         self._index_file = os.path.join(self._data_dir, "index.json")
 
-        os.makedirs(self._data_dir, exist_ok=True)
-        os.makedirs(self._notes_dir, exist_ok=True)
-        os.makedirs(self._trash_dir, exist_ok=True)
+        # Keep directory descriptors for all I/O. A later path replacement cannot
+        # redirect reads or writes outside these verified, owner-only directories.
+        self._directory_fds = {}
+        try:
+            root_fd = self._open_store_root(self._data_dir)
+            self._directory_fds[self._data_dir] = root_fd
+            self._directory_fds[self._notes_dir] = self._open_private_directory("notes", root_fd)
+            self._directory_fds[self._trash_dir] = self._open_private_directory("trash", root_fd)
+            self._migrate_store_permissions()
+        except Exception:
+            self.close()
+            raise
 
         self._index: List[IndexEntry] = []
         self._trash: List[TrashEntry] = []
@@ -70,10 +84,9 @@ class NoteStore:
         return self._trash
 
     def reload_from_disk(self):
+        loaded_index, loaded_trash = self._load_index_file(self._index_file)
         self._index.clear()
         self._trash.clear()
-
-        loaded_index, loaded_trash = self._load_index_file(self._index_file)
         self._index.extend(loaded_index)
         self._trash.extend(loaded_trash)
         self.post_index_did_change()
@@ -104,22 +117,8 @@ class NoteStore:
     # MARK: - Note Lazy Load
     def load_note(self, note_id: uuid.UUID) -> Optional[Note]:
         path = self._get_note_path(note_id)
-        if not os.path.exists(path):
-            print(f"[NoteStore] LoadNote falhou: Arquivo nao existe em '{path}'")
-            return None
-
         try:
-            sz = os.path.getsize(path)
-            if sz > self.max_note_bytes:
-                print(f"[NoteStore] LoadNote falhou: Tamanho do arquivo {sz} excede o limite {self.max_note_bytes}")
-                return None
-
-            with open(path, "rb") as f:
-                data = f.read()
-
-            if len(data) > self.max_note_bytes:
-                print(f"[NoteStore] LoadNote falhou: Tamanho dos bytes {len(data)} excede o limite {self.max_note_bytes}")
-                return None
+            data = self._read_private_file(path, self.max_note_bytes)
 
             # Handle UTF-8 BOM
             if data.startswith(b"\xef\xbb\xbf"):
@@ -151,6 +150,8 @@ class NoteStore:
             note.frame.h = max(120.0, min(float(note.frame.h), 4000.0))
 
             return note
+        except UnsafeStorePathError:
+            raise
         except Exception as e:
             print(f"[NoteStore] Erro ao carregar nota {note_id}: {e}")
             return None
@@ -207,30 +208,17 @@ class NoteStore:
             return
 
         entry = self._index[idx]
-        del self._index[idx]
-
         source_path = self._get_note_path(note_id)
         dest_path = os.path.join(self._trash_dir, f"{note_id}.json")
-
-        try:
-            if os.path.exists(dest_path):
-                os.remove(dest_path)
-            if os.path.exists(source_path):
-                shutil.move(source_path, dest_path)
-                self._trash.append(TrashEntry(
-                    id=entry.id,
-                    folder=entry.folder,
-                    snippet=entry.snippet,
-                    color=entry.color,
-                    deletedAt=datetime.utcnow()
-                ))
-        except Exception as ex:
-            print(f"[NoteStore] Falha ao mover nota {note_id} para lixeira: {ex}")
-            if os.path.exists(source_path):
-                try:
-                    os.remove(source_path)
-                except Exception:
-                    pass
+        self._move_private_file(source_path, dest_path)
+        del self._index[idx]
+        self._trash.append(TrashEntry(
+            id=entry.id,
+            folder=entry.folder,
+            snippet=entry.snippet,
+            color=entry.color,
+            deletedAt=datetime.utcnow()
+        ))
 
         self._write_index()
         self.post_index_did_change()
@@ -248,14 +236,7 @@ class NoteStore:
         source_path = os.path.join(self._trash_dir, f"{note_id}.json")
         dest_path = self._get_note_path(note_id)
 
-        try:
-            if os.path.exists(source_path):
-                if os.path.exists(dest_path):
-                    os.remove(dest_path)
-                shutil.move(source_path, dest_path)
-        except Exception as ex:
-            print(f"[NoteStore] Falha ao restaurar nota {note_id}: {ex}")
-            return
+        self._move_private_file(source_path, dest_path)
 
         del self._trash[idx]
         folder_exists = os.path.isdir(trash_entry.folder)
@@ -273,13 +254,9 @@ class NoteStore:
         self.post_index_did_change()
 
     def delete_permanently(self, note_id: uuid.UUID):
-        self._trash = [t for t in self._trash if t.id != note_id]
         trash_path = os.path.join(self._trash_dir, f"{note_id}.json")
-        try:
-            if os.path.exists(trash_path):
-                os.remove(trash_path)
-        except Exception:
-            pass
+        self._remove_private_file(trash_path)
+        self._trash = [t for t in self._trash if t.id != note_id]
 
         self._write_index()
         self.post_index_did_change()
@@ -287,11 +264,7 @@ class NoteStore:
     def empty_trash(self):
         for t in self._trash:
             path = os.path.join(self._trash_dir, f"{t.id}.json")
-            try:
-                if os.path.exists(path):
-                    os.remove(path)
-            except Exception:
-                pass
+            self._remove_private_file(path)
         self._trash.clear()
         self._write_index()
         self.post_index_did_change()
@@ -304,11 +277,7 @@ class NoteStore:
 
         for t in expired:
             path = os.path.join(self._trash_dir, f"{t.id}.json")
-            try:
-                if os.path.exists(path):
-                    os.remove(path)
-            except Exception:
-                pass
+            self._remove_private_file(path)
 
         self._trash = [t for t in self._trash if t.deletedAt >= cutoff]
         self._write_index()
@@ -371,61 +340,189 @@ class NoteStore:
         return os.path.join(self._notes_dir, f"{note_id}.json")
 
     def _write_note_file(self, note: Note):
-        try:
-            path = self._get_note_path(note.id)
-            json_str = json.dumps(note.to_dict(), indent=2, ensure_ascii=False)
-            self._write_file_atomic(path, json_str)
-        except Exception as e:
-            print(f"[NoteStore] Falha ao gravar nota {note.id}: {e}")
+        path = self._get_note_path(note.id)
+        json_str = json.dumps(note.to_dict(), indent=2, ensure_ascii=False)
+        self._write_file_atomic(path, json_str)
 
     def _write_index(self):
+        root = {
+            "version": 1,
+            "notes": [e.to_dict() for e in self._index],
+            "trash": [t.to_dict() for t in self._trash]
+        }
+        json_str = json.dumps(root, indent=2, ensure_ascii=False)
+        self._write_file_atomic(self._index_file, json_str)
+
+    def close(self):
+        for fd in getattr(self, "_directory_fds", {}).values():
+            os.close(fd)
+        self._directory_fds = {}
+
+    def __del__(self):
         try:
-            root = {
-                "version": 1,
-                "notes": [e.to_dict() for e in self._index],
-                "trash": [t.to_dict() for t in self._trash]
-            }
-            json_str = json.dumps(root, indent=2, ensure_ascii=False)
-            self._write_file_atomic(self._index_file, json_str)
-        except Exception as e:
-            print(f"[NoteStore] Falha ao gravar index.json: {e}")
+            self.close()
+        except Exception:
+            pass
 
     @staticmethod
-    def _write_file_atomic(file_path: str, content: str):
-        temp_path = file_path + ".tmp"
-        with open(temp_path, "w", encoding="utf-8") as f:
-            f.write(content)
+    def _verify_owned_file(info):
+        if info.st_uid != os.geteuid() or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise UnsafeStorePathError("Store files must be regular, singly linked, and owned by this account")
 
-        # Atomic replacement
+    @staticmethod
+    def _verify_private_directory(fd):
+        info = os.fstat(fd)
+        if info.st_uid != os.geteuid() or not stat.S_ISDIR(info.st_mode):
+            raise UnsafeStorePathError("Store directories must be owned by this account")
+        os.fchmod(fd, 0o700)
+
+    @classmethod
+    def _open_private_directory(cls, path, parent_fd=None):
         try:
-            if os.path.exists(file_path):
-                os.replace(temp_path, file_path)
-            else:
-                os.rename(temp_path, file_path)
+            os.mkdir(path, mode=0o700, dir_fd=parent_fd)
+        except FileExistsError:
+            pass
+        try:
+            fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=parent_fd)
+        except OSError as error:
+            raise UnsafeStorePathError("Cannot open a private store directory safely") from error
+        try:
+            cls._verify_private_directory(fd)
+            return fd
         except Exception:
-            shutil.copy(temp_path, file_path)
+            os.close(fd)
+            raise
+
+    @classmethod
+    def _open_store_root(cls, path):
+        # Walk parents without following links. Existing system-owned ancestors
+        # may be shared (e.g. /home or sticky /tmp); the application root itself
+        # must belong to this account. Do not chmod shared parent directories.
+        components = os.path.abspath(path).split(os.sep)[1:]
+        if not components or not components[-1]:
+            raise UnsafeStorePathError("The filesystem root cannot be a note store")
+        flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+        parent_fd = os.open(os.sep, flags)
+        try:
+            for component in components[:-1]:
+                try:
+                    child_fd = os.open(component, flags, dir_fd=parent_fd)
+                except FileNotFoundError:
+                    try:
+                        os.mkdir(component, mode=0o700, dir_fd=parent_fd)
+                    except FileExistsError:
+                        pass
+                    child_fd = os.open(component, flags, dir_fd=parent_fd)
+                except OSError as error:
+                    raise UnsafeStorePathError("Store parent paths cannot contain links or special files") from error
+                info = os.fstat(child_fd)
+                unsafe_write = info.st_mode & 0o022 and not (
+                    info.st_uid == 0 and info.st_mode & stat.S_ISVTX)
+                if info.st_uid not in (0, os.geteuid()) or unsafe_write:
+                    os.close(child_fd)
+                    raise UnsafeStorePathError("Store parent directory has unsafe ownership or write permissions")
+                os.close(parent_fd)
+                parent_fd = child_fd
+            return cls._open_private_directory(components[-1], parent_fd)
+        finally:
+            os.close(parent_fd)
+
+    def _file_location(self, path):
+        absolute_path = os.path.abspath(path)
+        parent = os.path.dirname(absolute_path)
+        if parent not in self._directory_fds:
+            raise UnsafeStorePathError("File is outside the managed store")
+        fd = self._directory_fds[parent]
+        self._verify_private_directory(fd)
+        return fd, os.path.basename(absolute_path)
+
+    def _open_private_file(self, path):
+        parent_fd, name = self._file_location(path)
+        try:
+            # NONBLOCK prevents FIFO/device paths from hanging before fstat.
+            fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC, dir_fd=parent_fd)
+        except FileNotFoundError:
+            raise
+        except OSError as error:
+            raise UnsafeStorePathError("Cannot open a store file safely") from error
+        try:
+            self._verify_owned_file(os.fstat(fd))
+            os.fchmod(fd, 0o600)
+            return fd
+        except Exception:
+            os.close(fd)
+            raise
+
+    def _verify_existing_file(self, path):
+        try:
+            fd = self._open_private_file(path)
+        except FileNotFoundError:
+            return False
+        os.close(fd)
+        return True
+
+    def _migrate_store_permissions(self):
+        # Existing permissive files are tightened before the index is loaded.
+        self._verify_existing_file(self._index_file)
+        self._verify_existing_file(self._index_file + ".tmp")
+        for directory in (self._notes_dir, self._trash_dir):
+            for name in os.listdir(self._directory_fds[directory]):
+                self._verify_existing_file(os.path.join(directory, name))
+
+    def _read_private_file(self, path, max_bytes):
+        fd = self._open_private_file(path)
+        with os.fdopen(fd, "rb") as file:
+            if os.fstat(file.fileno()).st_size > max_bytes:
+                raise ValueError("Store file exceeds the size limit")
+            data = file.read(max_bytes + 1)
+        if len(data) > max_bytes:
+            raise ValueError("Store file exceeds the size limit")
+        return data
+
+    def _write_file_atomic(self, file_path: str, content: str):
+        parent_fd, name = self._file_location(file_path)
+        self._verify_existing_file(file_path)
+        # No predictable .tmp file, no following links, and no copy fallback.
+        temp_name = f".{name}.{uuid.uuid4().hex}.tmp"
+        fd = os.open(temp_name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
+                     0o600, dir_fd=parent_fd)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as file:
+                os.fchmod(file.fileno(), 0o600)
+                file.write(content)
+                file.flush()
+                os.fsync(file.fileno())
+            self._verify_existing_file(file_path)
+            os.replace(temp_name, name, src_dir_fd=parent_fd, dst_dir_fd=parent_fd)
+            os.fsync(parent_fd)
+        finally:
             try:
-                os.remove(temp_path)
-            except Exception:
+                os.unlink(temp_name, dir_fd=parent_fd)
+            except FileNotFoundError:
                 pass
+
+    def _move_private_file(self, source_path, destination_path):
+        source_fd, source_name = self._file_location(source_path)
+        destination_fd, destination_name = self._file_location(destination_path)
+        if not self._verify_existing_file(source_path):
+            raise FileNotFoundError(source_path)
+        self._verify_existing_file(destination_path)
+        os.replace(source_name, destination_name, src_dir_fd=source_fd, dst_dir_fd=destination_fd)
+        os.fsync(source_fd)
+        os.fsync(destination_fd)
+
+    def _remove_private_file(self, path):
+        parent_fd, name = self._file_location(path)
+        if self._verify_existing_file(path):
+            os.unlink(name, dir_fd=parent_fd)
+            os.fsync(parent_fd)
 
     def _load_index_file(self, path: str) -> tuple:
         entries = []
         trashed = []
 
-        if not os.path.exists(path):
-            return entries, trashed
-
         try:
-            sz = os.path.getsize(path)
-            if sz > self.max_index_bytes:
-                return entries, trashed
-
-            with open(path, "rb") as f:
-                data = f.read()
-
-            if len(data) > self.max_index_bytes:
-                return entries, trashed
+            data = self._read_private_file(path, self.max_index_bytes)
 
             if data.startswith(b"\xef\xbb\xbf"):
                 data = data[3:]
@@ -460,6 +557,8 @@ class NoteStore:
                     except Exception:
                         pass
 
+        except UnsafeStorePathError:
+            raise
         except Exception:
             pass
 

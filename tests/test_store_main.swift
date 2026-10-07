@@ -13,7 +13,7 @@ try! fm.createDirectory(atPath: folderA, withIntermediateDirectories: true)
 let store = NoteStore.shared
 
 // 1. cria
-var n = store.createNote(inFolder: folderA, frame: NoteFrame(x: 0, y: 0, w: 260, h: 240))
+var n = store.createNote(inFolder: folderA, frame: NoteFrame(x: 0, y: 0, w: 260, h: 240))!
 n.text = "teste lixeira"
 store.save(n)
 assert(store.entries(inFolder: folderA).count == 1, "criação falhou")
